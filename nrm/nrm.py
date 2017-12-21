@@ -44,7 +44,7 @@ def add_arguments(parser):
   parser.add_argument("--num_units", type=int, default=32, help="Network size.")
   parser.add_argument("--num_layers", type=int, default=2,
                       help="Network depth.")
-  parser.add_argument("--encoder_type", type=str, default="uni", help="""\
+  parser.add_argument("--encoder_type", type=str, default="bi", help="""\
       uni | bi | gnmt. For bi, we build num_layers/2 bi-directional layers.For
       gnmt, we build 1 bi-directional layer, and (num_layers - 1) uni-
       directional layers.\
@@ -59,7 +59,7 @@ def add_arguments(parser):
                       help="Number of partitions for embedding vars.")
 
   # attention mechanisms
-  parser.add_argument("--attention", type=str, default="", help="""\
+  parser.add_argument("--attention", type=str, default="luong", help="""\
       luong | scaled_luong | bahdanau | normed_bahdanau or set to "" for no
       attention\
       """)
@@ -165,9 +165,9 @@ def add_arguments(parser):
                       """)
 
   # Sequence lengths
-  parser.add_argument("--src_max_len", type=int, default=50,
+  parser.add_argument("--src_max_len", type=int, default=100,
                       help="Max length of src sequences during training.")
-  parser.add_argument("--tgt_max_len", type=int, default=50,
+  parser.add_argument("--tgt_max_len", type=int, default=100,
                       help="Max length of tgt sequences during training.")
   parser.add_argument("--src_max_len_infer", type=int, default=None,
                       help="Max length of src sequences during inference.")
@@ -186,7 +186,7 @@ def add_arguments(parser):
                       help="Dropout rate (not keep_prob)")
   parser.add_argument("--max_gradient_norm", type=float, default=5.0,
                       help="Clip gradients to this norm.")
-  parser.add_argument("--batch_size", type=int, default=128, help="Batch size.")
+  parser.add_argument("--batch_size", type=int, default=192, help="Batch size.")
 
   parser.add_argument("--steps_per_stats", type=int, default=100,
                       help=("How many training steps to do per stats logging."
@@ -208,7 +208,7 @@ def add_arguments(parser):
                       help="Number of gpus in each worker.")
   parser.add_argument("--log_device_placement", type="bool", nargs="?",
                       const=True, default=False, help="Debug GPU allocation.")
-  parser.add_argument("--metrics", type=str, default="bleu,route,accuracy",
+  parser.add_argument("--metrics", type=str, default="bleu,rouge,accuracy",
                       help=("Comma-separated list of evaluations "
                             "metrics (bleu,rouge,accuracy)"))
   parser.add_argument("--steps_per_external_eval", type=int, default=None,
