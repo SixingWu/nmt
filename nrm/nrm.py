@@ -188,7 +188,7 @@ def add_arguments(parser):
                       help="Clip gradients to this norm.")
   parser.add_argument("--batch_size", type=int, default=192, help="Batch size.")
 
-  parser.add_argument("--steps_per_stats", type=int, default=100,
+  parser.add_argument("--steps_per_stats", type=int, default=500,
                       help=("How many training steps to do per stats logging."
                             "Save checkpoint every 10x steps_per_stats"))
   parser.add_argument("--max_train", type=int, default=0,
@@ -211,7 +211,7 @@ def add_arguments(parser):
   parser.add_argument("--metrics", type=str, default="bleu,rouge,accuracy",
                       help=("Comma-separated list of evaluations "
                             "metrics (bleu,rouge,accuracy)"))
-  parser.add_argument("--steps_per_external_eval", type=int, default=None,
+  parser.add_argument("--steps_per_external_eval", type=int, default=10000,
                       help="""\
       How many training steps to do per external evaluation.  Automatically set
       based on data if None.\
