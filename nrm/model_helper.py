@@ -39,12 +39,20 @@ def get_initializer(init_op, seed=None, init_weight=None):
 
 
 def get_device_str(device_id, num_gpus):
-  """Return a device string for multi-GPU setup."""
-  if num_gpus == 0:
-    return "/cpu:0"
-  device_str_output = "/gpu:%d" % (device_id % num_gpus)
-  return device_str_output
 
+  # """Return a device string for multi-GPU setup."""
+  # if num_gpus == 0:
+  #   return "/cpu:0"
+  # device_str_output = "/gpu:%d" % (device_id % num_gpus)
+  # return device_str_output
+  return get_device_str_workonsinglenode(num_gpus)
+
+def get_device_str_workonsinglenode( num_gpus):
+    """Only use one gpu"""
+    if num_gpus == 0:
+      return "/cpu:0"
+    device_str_output = "/gpu:%d" % (num_gpus -1)
+    return device_str_output
 
 class ExtraArgs(collections.namedtuple(
     "ExtraArgs", ("single_cell_fn", "model_device_fn",
