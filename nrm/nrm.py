@@ -92,8 +92,8 @@ def add_arguments(parser):
       """)
 
   # optimizer
-  parser.add_argument("--optimizer", type=str, default="sgd", help="sgd | adam")
-  parser.add_argument("--learning_rate", type=float, default=1.0,
+  parser.add_argument("--optimizer", type=str, default="adam", help="sgd | adam")
+  parser.add_argument("--learning_rate", type=float, default=0.001,
                       help="Learning rate. Adam: 0.001 | 0.0001")
   parser.add_argument("--warmup_steps", type=int, default=0,
                       help="How many steps we inverse-decay learning.")
@@ -103,7 +103,7 @@ def add_arguments(parser):
              exponentiate until the specified lr.\
       """)
   parser.add_argument(
-      "--decay_scheme", type=str, default="", help="""\
+      "--decay_scheme", type=str, default="luong10", help="""\
       How we decay learning rate. Options include:
         luong234: after 2/3 num train steps, we start halving the learning rate
           for 4 times before finishing.
