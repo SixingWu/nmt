@@ -256,9 +256,8 @@ class AttentionCharModel(attention_model.AttentionModel):
 
 
 def create_attention_mechanism(attention_option, num_units, memory,
-                               source_sequence_length, mode):
+                               source_sequence_length):
   """Create attention mechanism based on the attention_option."""
-  del mode  # unused
 
   # Mechanism
   if attention_option == "luong":
