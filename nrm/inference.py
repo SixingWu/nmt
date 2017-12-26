@@ -21,6 +21,7 @@ import time
 
 import tensorflow as tf
 
+from . import attention_char_model
 from . import attention_model
 from . import gnmt_model
 from . import model as nmt_model
@@ -95,6 +96,8 @@ def inference(ckpt,
     model_creator = nmt_model.Model
   elif hparams.attention_architecture == "standard":
     model_creator = attention_model.AttentionModel
+  elif hparams.attention_architecture == 'char_standard':
+      model_creator = attention_char_model.AttentionCharModel
   elif hparams.attention_architecture in ["gnmt", "gnmt_v2"]:
     model_creator = gnmt_model.GNMTModel
   else:

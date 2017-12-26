@@ -23,6 +23,7 @@ import sys
 import numpy as np
 import tensorflow as tf
 
+from . import attention_char_model
 from . import attention_model
 from . import gnmt_model
 from . import model

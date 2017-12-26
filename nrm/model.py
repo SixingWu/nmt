@@ -19,6 +19,7 @@ from __future__ import division
 from __future__ import print_function
 
 import abc
+import numpy as np
 
 import tensorflow as tf
 
@@ -282,7 +283,10 @@ class BaseModel(object):
 
     with tf.variable_scope(scope or "dynamic_seq2seq", dtype=dtype):
       # Encoder
-      encoder_outputs, encoder_state = self._build_encoder(hparams)
+      if hparams.cnn_encoder:
+            encoder_outputs, encoder_state = self._build_encoder(hparams)
+      else:
+            encoder_outputs, encoder_state = self._build_encoder(hparams)
 
       ## Decoder
       logits, sample_id, final_context_state = self._build_decoder(
@@ -533,6 +537,8 @@ class Model(BaseModel):
   This class implements a multi-layer recurrent neural network as encoder,
   and a multi-layer recurrent neural network decoder.
   """
+
+
 
   def _build_encoder(self, hparams):
     """Build an encoder."""
