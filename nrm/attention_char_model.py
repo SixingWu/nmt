@@ -187,8 +187,8 @@ class AttentionCharModel(attention_model.AttentionModel):
     num_residual_layers = hparams.num_residual_layers
     num_gpus = hparams.num_gpus
     beam_width = hparams.beam_width
-    
-    width_strides = hparams.wide_strides
+
+    width_strides = hparams.width_strides
     source_sequence_length = tf.cast(tf.ceil(self.iterator.source_sequence_length / width_strides), tf.int64)
 
 
