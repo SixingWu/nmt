@@ -24,7 +24,7 @@ from .utils import misc_utils as utils
 
 from . import attention_model
 from . import model_helper
-from numpy import np
+import numpy as np
 
 __all__ = ["AttentionCharModel"]
 
