@@ -289,6 +289,9 @@ def create_hparams(flags):
       embed_prefix=flags.embed_prefix,
       out_dir=flags.out_dir,
 
+      # cnn
+      wide_strides = flags.width_strides,
+
       # Networks
       num_units=flags.num_units,
       num_layers=flags.num_layers,
