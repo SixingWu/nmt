@@ -82,7 +82,8 @@ class AttentionCharModel(attention_model.AttentionModel):
           num_units = hparams.num_units
 
           utils.print_out('debug:')
-          utils.print_out(tf.shape(encoder_emb_inp))
+          print(tf.shape(source))
+          print(tf.shape(encoder_emb_inp))
           conv_inputs = tf.reshape(encoder_emb_inp, [max_time, batch_size, num_units, 1])
           # [batch, height = num_units, width = max_time, channels = 1]
           conv_inputs = tf.transpose(conv_inputs, perm=[1, 2, 0, 3])
