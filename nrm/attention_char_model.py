@@ -178,9 +178,9 @@ class AttentionCharModel(attention_model.AttentionModel):
     attention_option = hparams.attention
     attention_architecture = hparams.attention_architecture
 
-    if attention_architecture != "standard":
+    if attention_architecture != "char_standard":
       raise ValueError(
-          "Unknown attention architecture %s" % attention_architecture)
+          "Unknown(Unmatched!) attention architecture %s" % attention_architecture)
 
     num_units = hparams.num_units
     num_layers = hparams.num_layers
@@ -255,7 +255,7 @@ def create_attention_mechanism(attention_option, num_units, memory,
                                source_sequence_length, mode):
   """Create attention mechanism based on the attention_option."""
   del mode  # unused
-
+  segment_length = tf.cast(tf.ceil(self.iterator.source_sequence_length / width_strides), tf.int64)
   # Mechanism
   if attention_option == "luong":
     attention_mechanism = tf.contrib.seq2seq.LuongAttention(

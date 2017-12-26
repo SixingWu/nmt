@@ -41,10 +41,12 @@ def add_arguments(parser):
   parser.register("type", "bool", lambda v: v.lower() == "true")
 
 
-  # encoder
+  # char-level
   parser.add_argument("--embedding_model", type=str, default="default", help="""\
         rnn | cnn| bahdanau | normed_bahdanau or set to "" 
         """)
+  parser.add_argument("--width_strides", type=int, default=3,
+                      help="width_strides")
   # network
   parser.add_argument("--num_units", type=int, default=32, help="Network size.")
   parser.add_argument("--num_layers", type=int, default=2,
@@ -68,6 +70,8 @@ def add_arguments(parser):
       luong | scaled_luong | bahdanau | normed_bahdanau or set to "" for no
       attention\
       """)
+
+
   parser.add_argument(
       "--attention_architecture",
       type=str,
