@@ -142,11 +142,10 @@ class AttentionModel(model.Model):
     return _create_attention_images_summary(self.final_context_state)
 
 
-def create_attention_mechanism(attention_option, num_units, width_strides, memory,
+def create_attention_mechanism(attention_option, num_units, memory,
                                source_sequence_length, mode):
   """Create attention mechanism based on the attention_option."""
   del mode  # unused
-  segment_length = tf.cast(tf.ceil(source_sequence_length/ width_strides), tf.int64)
   # Mechanism
   if attention_option == "luong":
     attention_mechanism = tf.contrib.seq2seq.LuongAttention(
