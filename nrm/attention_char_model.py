@@ -128,7 +128,7 @@ class AttentionCharModel(attention_model.AttentionModel):
           encoder_emb_inp = tf.transpose(highway_outputs, perm=[1, 0, 2])
 
           # segment_lens
-          segment_length = [ int(np.ceil(x)) for x in self.iterator.source_sequence_length]
+          segment_length = tf.ceil(self.iterator.source_sequence_length / width_strides, dtype=tf.int32)
 
           # Encoder_outpus: [max_time, batch_size, num_units]
           if hparams.encoder_type == "uni":
