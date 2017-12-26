@@ -80,6 +80,10 @@ class AttentionCharModel(attention_model.AttentionModel):
           max_time = hparams.src_max_len
           batch_size = hparams.batch_size
           num_units = hparams.num_units
+          dims = tf.unstack(tf.shape(encoder_emb_inp))
+          max_time = dims[0]
+          batch_size = dims[1]
+          num_units = hparams.num_units
 
           utils.print_out('debug:')
           print(tf.shape(source))
@@ -102,7 +106,7 @@ class AttentionCharModel(attention_model.AttentionModel):
           pool_outputs = []
           width_strides = 3
           strides = [1, 1, width_strides, 1]
-          segment_len = int(np.ceil(max_time / 3))
+          segment_len = tf.cast(tf.ceil(max_time / 3), tf.int32)
           for conv_output in conv_outputs:
               pool_out = tf.nn.max_pool(conv_output, [1, 1, width_strides, 1], strides, padding='SAME')
               pool_out = tf.reshape(pool_out, [batch_size, segment_len])
