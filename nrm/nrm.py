@@ -42,7 +42,7 @@ def add_arguments(parser):
 
 
   # encoder
-  parser.add_argument("--encoder_type", type=str, default="rnn", help="""\
+  parser.add_argument("--embedding_model", type=str, default="default", help="""\
         rnn | cnn| bahdanau | normed_bahdanau or set to "" 
         """)
   # network
