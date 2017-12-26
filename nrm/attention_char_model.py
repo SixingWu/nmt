@@ -127,6 +127,8 @@ class AttentionCharModel(attention_model.AttentionModel):
 
           encoder_emb_inp = tf.transpose(highway_outputs, perm=[1, 0, 2])
 
+          # segment_lens
+          segment_length = [ int(np.ceil(x)) for x in self.iterator.source_sequence_length]
 
           # Encoder_outpus: [max_time, batch_size, num_units]
           if hparams.encoder_type == "uni":
@@ -139,7 +141,7 @@ class AttentionCharModel(attention_model.AttentionModel):
                   cell,
                   encoder_emb_inp,
                   dtype=dtype,
-                  sequence_length=segment_len,
+                  sequence_length=segment_length,
                   time_major=self.time_major,
                   swap_memory=True)
           elif hparams.encoder_type == "bi":
@@ -151,7 +153,7 @@ class AttentionCharModel(attention_model.AttentionModel):
               encoder_outputs, bi_encoder_state = (
                   self._build_bidirectional_rnn(
                       inputs=encoder_emb_inp,
-                      sequence_length=segment_len,
+                      sequence_length=segment_length,
                       dtype=dtype,
                       hparams=hparams,
                       num_bi_layers=num_bi_layers,
