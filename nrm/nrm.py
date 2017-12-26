@@ -290,7 +290,7 @@ def create_hparams(flags):
       out_dir=flags.out_dir,
 
       # cnn
-      wide_strides = flags.width_strides,
+      width_strides=flags.width_strides,
 
       # Networks
       num_units=flags.num_units,
