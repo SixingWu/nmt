@@ -40,6 +40,11 @@ def add_arguments(parser):
   """Build ArgumentParser."""
   parser.register("type", "bool", lambda v: v.lower() == "true")
 
+
+  # encoder
+  parser.add_argument("--encoder_type", type=str, default="rnn", help="""\
+        rnn | cnn| bahdanau | normed_bahdanau or set to "" 
+        """)
   # network
   parser.add_argument("--num_units", type=int, default=32, help="Network size.")
   parser.add_argument("--num_layers", type=int, default=2,

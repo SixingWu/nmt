@@ -282,11 +282,8 @@ class BaseModel(object):
     num_gpus = hparams.num_gpus
 
     with tf.variable_scope(scope or "dynamic_seq2seq", dtype=dtype):
-      # Encoder
-      if hparams.cnn_encoder:
-            encoder_outputs, encoder_state = self._build_encoder(hparams)
-      else:
-            encoder_outputs, encoder_state = self._build_encoder(hparams)
+
+      encoder_outputs, encoder_state = self._build_encoder(hparams)
 
       ## Decoder
       logits, sample_id, final_context_state = self._build_decoder(
