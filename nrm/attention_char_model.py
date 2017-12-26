@@ -187,6 +187,10 @@ class AttentionCharModel(attention_model.AttentionModel):
     num_residual_layers = hparams.num_residual_layers
     num_gpus = hparams.num_gpus
     beam_width = hparams.beam_width
+    
+    width_strides = hparams.wide_strides
+    source_sequence_length = tf.cast(tf.ceil(self.iterator.source_sequence_length / width_strides), tf.int64)
+
 
     dtype = tf.float32
 
@@ -255,7 +259,7 @@ def create_attention_mechanism(attention_option, num_units, memory,
                                source_sequence_length, mode):
   """Create attention mechanism based on the attention_option."""
   del mode  # unused
-  segment_length = tf.cast(tf.ceil(self.iterator.source_sequence_length / width_strides), tf.int64)
+
   # Mechanism
   if attention_option == "luong":
     attention_mechanism = tf.contrib.seq2seq.LuongAttention(
