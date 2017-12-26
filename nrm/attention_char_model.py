@@ -100,7 +100,7 @@ class AttentionCharModel(attention_model.AttentionModel):
           pool_outputs = []
           width_strides = 3
           strides = [1, 1, width_strides, 1]
-          segment_len = np.ceil(max_time / 3)
+          segment_len = int(np.ceil(max_time / 3))
           for conv_output in conv_outputs:
               pool_out = tf.nn.max_pool(conv_output, [1, 1, width_strides, 1], strides, padding='SAME')
               pool_out = tf.reshape(pool_out, [batch_size, segment_len])
