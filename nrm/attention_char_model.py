@@ -77,13 +77,14 @@ class AttentionCharModel(attention_model.AttentionModel):
           # Look up embedding, emp_inp: [max_time, batch_size, num_units]
           encoder_emb_inp = tf.nn.embedding_lookup(
               self.embedding_encoder, source)
-          max_time = hparams.src_max_len
-          batch_size = hparams.batch_size
-          num_units = hparams.num_units
           dims = tf.unstack(tf.shape(encoder_emb_inp))
           max_time = dims[0]
           batch_size = dims[1]
           num_units = hparams.num_units
+
+          min_windows = hparams.cnn_min_window_size
+          max_windows = hparams.cnn_max_window_size
+          high_way_layers = hparams.high_way_layer
 
           utils.print_out('debug:')
           print(tf.shape(source))
@@ -94,8 +95,8 @@ class AttentionCharModel(attention_model.AttentionModel):
 
           # CNN layer, windows width from 1 to 5
           conv_outputs = []
-          filter_nums = 5
-          for width in range(1, 6):
+          filter_nums = max_windows - min_windows + 1
+          for width in range(min_windows, max_windows + 1):
               filter = tf.get_variable("filter_%d" % (width), shape=[num_units, width, 1, 1])
               strides = [1, num_units, 1, 1]
               # [batch, height = 1, width = max_time, channels = 1]
@@ -104,31 +105,35 @@ class AttentionCharModel(attention_model.AttentionModel):
 
           # max_pooling with strides=3
           pool_outputs = []
-          width_strides = 3
+          width_strides = hparams.width_strides
           strides = [1, 1, width_strides, 1]
-          segment_len = tf.cast(tf.ceil(max_time / 3), tf.int32)
+          segment_len = tf.cast(tf.ceil(max_time / width_strides), tf.int32)
           for conv_output in conv_outputs:
               pool_out = tf.nn.max_pool(conv_output, [1, 1, width_strides, 1], strides, padding='SAME')
               pool_out = tf.reshape(pool_out, [batch_size, segment_len])
               pool_outputs.append(pool_out)
 
-          def highway(x, size, activation, carry_bias=-1.0):
-              W_T = tf.Variable(tf.truncated_normal([size, size], stddev=0.1), name="weight_transform")
-              b_T = tf.Variable(tf.constant(carry_bias, shape=[size]), name="bias_transform")
-              W = tf.Variable(tf.truncated_normal([size, size], stddev=0.1), name="weight")
-              b = tf.Variable(tf.constant(0.1, shape=[size]), name="bias")
-              T = tf.sigmoid(tf.matmul(x, W_T) + b_T, name="transform_gate")
-              H = activation(tf.matmul(x, W) + b, name="activation")
-              C = tf.subtract(1.0, T, name="carry_gate")
-              y = tf.add(tf.multiply(H, T), tf.multiply(x, C), "y")
-              return y
+          def highway(x, size, activation, carry_bias=-1.0, name = 'highway'):
+              with tf.variable_scope(name):
+                  W_T = tf.Variable(tf.truncated_normal([size, size], stddev=0.1), name="weight_transform")
+                  b_T = tf.Variable(tf.constant(carry_bias, shape=[size]), name="bias_transform")
+                  W = tf.Variable(tf.truncated_normal([size, size], stddev=0.1), name="weight")
+                  b = tf.Variable(tf.constant(0.1, shape=[size]), name="bias")
+                  T = tf.sigmoid(tf.matmul(x, W_T) + b_T, name="transform_gate")
+                  H = activation(tf.matmul(x, W) + b, name="activation")
+                  C = tf.subtract(1.0, T, name="carry_gate")
+                  y = tf.add(tf.multiply(H, T), tf.multiply(x, C), "y")
+                  return y
 
           # [batch, width, height]
           stacked_results = tf.stack(pool_outputs, axis=2)
 
-          highway_outputs = highway(tf.reshape(stacked_results, [-1, filter_nums]), filter_nums, tf.nn.relu)
+         # TODO Add 4 layers
+          high_way_tmp = tf.reshape(stacked_results, [-1, filter_nums])
+          for i in range(high_way_layers):
+              high_way_tmp = highway(high_way_tmp, filter_nums, tf.nn.relu, name='highway_%d' % i)
 
-          highway_outputs = tf.reshape(highway_outputs, [batch_size, segment_len, filter_nums])
+          highway_outputs = tf.reshape(high_way_tmp, [batch_size, segment_len, filter_nums])
           # [time_width, batch, height]
 
           encoder_emb_inp = tf.transpose(highway_outputs, perm=[1, 0, 2])
