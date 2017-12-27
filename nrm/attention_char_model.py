@@ -85,6 +85,7 @@ class AttentionCharModel(attention_model.AttentionModel):
           min_windows = hparams.cnn_min_window_size
           max_windows = hparams.cnn_max_window_size
           high_way_layers = hparams.high_way_layer
+          filters_per_windows = hparams.filters_per_windows
 
           utils.print_out('debug:')
           print(tf.shape(source))
@@ -95,11 +96,11 @@ class AttentionCharModel(attention_model.AttentionModel):
 
           # CNN layer, windows width from 1 to 5
           conv_outputs = []
-          filter_nums = max_windows - min_windows + 1
+          filter_nums = (max_windows - min_windows + 1) * filters_per_windows
           for width in range(min_windows, max_windows + 1):
-              filter = tf.get_variable("filter_%d" % (width), shape=[num_units, width, 1, 1])
+              filter = tf.get_variable("filter_%d" % (width), shape=[num_units, width, 1, filters_per_windows])
               strides = [1, num_units, 1, 1]
-              # [batch, height = 1, width = max_time, channels = 1]
+              # [batch, height = 1, width = max_time, channels = filters_per_windows]
               conv_out = tf.nn.relu(tf.nn.conv2d(conv_inputs, filter, strides, padding='SAME'))
               conv_outputs.append(conv_out)
 
@@ -110,7 +111,8 @@ class AttentionCharModel(attention_model.AttentionModel):
           segment_len = tf.cast(tf.ceil(max_time / width_strides), tf.int32)
           for conv_output in conv_outputs:
               pool_out = tf.nn.max_pool(conv_output, [1, 1, width_strides, 1], strides, padding='SAME')
-              pool_out = tf.reshape(pool_out, [batch_size, segment_len])
+              # [batch, height = 1, width = segment_len, channels = filters_per_windows]
+              pool_out = tf.reshape(pool_out, [batch_size, segment_len, filters_per_windows])
               pool_outputs.append(pool_out)
 
           def highway(x, size, activation, carry_bias=-1.0, name = 'highway'):
@@ -125,8 +127,9 @@ class AttentionCharModel(attention_model.AttentionModel):
                   y = tf.add(tf.multiply(H, T), tf.multiply(x, C), "y")
                   return y
 
-          # [batch, width, height]
-          stacked_results = tf.stack(pool_outputs, axis=2)
+          # [batch_size, segment_len, filter_nums=num_windows*filters_per_windows]
+
+          stacked_results = tf.concat(pool_outputs, axis=-1)
 
          # TODO Add 4 layers
           high_way_tmp = tf.reshape(stacked_results, [-1, filter_nums])

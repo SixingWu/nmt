@@ -49,6 +49,7 @@ def add_arguments(parser):
                       help="width_strides")
   parser.add_argument("--cnn_min_window_size", type=int, default=1, help="cnn min size.")
   parser.add_argument("--cnn_max_window_size", type=int, default=5, help="cnn max size.")
+  parser.add_argument("--filters_per_windows", type=int, default=200, help="cnn per.")
   parser.add_argument("--high_way_layer", type=int, default=4, help="high way size.")
   # network
   parser.add_argument("--num_units", type=int, default=32, help="Network size.")
@@ -297,6 +298,7 @@ def create_hparams(flags):
       cnn_min_window_size=flags.cnn_min_window_size,
       cnn_max_window_size=flags.cnn_max_window_size,
       high_way_layer=flags.high_way_layer,
+      filters_per_windows=flags.filters_per_windows,
 
       # Networks
       num_units=flags.num_units,
