@@ -147,7 +147,7 @@ class AttentionCharModel(attention_model.AttentionModel):
           if hparams.residual_cnn_layer:
               assert int(width_strides) == 1,'resudual_cnn_layer asks width_strides == 1'
               utils.print_out("Residual CNN is enabled")
-              encoder_emb_inp = tf.nn.relu(encoder_emb_inp + original_encoder_emb_inp)
+              encoder_emb_inp = tf.concat([encoder_emb_inp,original_encoder_emb_inp],axis=-1)
 
           # Encoder_outpus: [max_time, batch_size, num_units]
           if hparams.encoder_type == "uni":
