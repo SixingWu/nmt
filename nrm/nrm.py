@@ -51,6 +51,9 @@ def add_arguments(parser):
   parser.add_argument("--cnn_max_window_size", type=int, default=5, help="cnn max size.")
   parser.add_argument("--filters_per_windows", type=int, default=200, help="cnn per.")
   parser.add_argument("--high_way_layer", type=int, default=4, help="high way size.")
+  parser.add_argument("--residual_cnn_layer", type="bool", nargs="?", const=True,
+                      default=False,
+                      help="Whether to add residual connections.")
   # network
   parser.add_argument("--num_units", type=int, default=32, help="Network size.")
   parser.add_argument("--num_layers", type=int, default=2,
@@ -299,6 +302,7 @@ def create_hparams(flags):
       cnn_max_window_size=flags.cnn_max_window_size,
       high_way_layer=flags.high_way_layer,
       filters_per_windows=flags.filters_per_windows,
+      residual_cnn_layer=flags.residual_cnn_layer,
 
       # Networks
       num_units=flags.num_units,

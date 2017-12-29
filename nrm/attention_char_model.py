@@ -75,8 +75,9 @@ class AttentionCharModel(attention_model.AttentionModel):
       with tf.variable_scope("encoder") as scope:
           dtype = scope.dtype
           # Look up embedding, emp_inp: [max_time, batch_size, num_units]
-          encoder_emb_inp = tf.nn.embedding_lookup(
+          original_encoder_emb_inp = tf.nn.embedding_lookup(
               self.embedding_encoder, source)
+          encoder_emb_inp = original_encoder_emb_inp
           dims = tf.unstack(tf.shape(encoder_emb_inp))
           max_time = dims[0]
           batch_size = dims[1]
@@ -131,18 +132,22 @@ class AttentionCharModel(attention_model.AttentionModel):
 
           stacked_results = tf.concat(pool_outputs, axis=-1)
 
-         # TODO Add 4 layers
+
           high_way_tmp = tf.reshape(stacked_results, [-1, filter_nums])
           for i in range(high_way_layers):
               high_way_tmp = highway(high_way_tmp, filter_nums, tf.nn.relu, name='highway_%d' % i)
 
           highway_outputs = tf.reshape(high_way_tmp, [batch_size, segment_len, filter_nums])
           # [time_width, batch, height]
-
           encoder_emb_inp = tf.transpose(highway_outputs, perm=[1, 0, 2])
 
           # segment_lens
           segment_length = tf.cast(tf.ceil(self.iterator.source_sequence_length / width_strides), tf.int64)
+
+          if hparams.residual_cnn_layer:
+              assert int(width_strides) == 1,'resudual_cnn_layer asks width_strides == 1'
+              utils.print_out("Residual CNN is enabled")
+              encoder_emb_inp = tf.nn.relu(encoder_emb_inp + original_encoder_emb_inp)
 
           # Encoder_outpus: [max_time, batch_size, num_units]
           if hparams.encoder_type == "uni":
