@@ -238,7 +238,7 @@ export CUDA_VISIBLE_DEVICES=0
 python3 -m nrm.nrm  --beam_width=10 --out_dir=models/separate_sub_80000_level/best_rouge  --inference_input_file=/ldev/tensorflow/nmt/data/sublevel/test.message  --inference_output_file=decoded/sub1_rnn_separate_4w_10_test_fbest_rouge >> decoded/log/sub1_rnn_separate_4w.txt
 export CUDA_VISIBLE_DEVICES=0
 python3 -m nrm.nrm  --beam_width=10 --out_dir=models/separate_sub_80000_level/best_bleu  --inference_input_file=/ldev/tensorflow/nmt/data/sublevel/test.message  --inference_output_file=decoded/sub1_rnn_separate_4w_10_test_fbest_bleu >> decoded/log/sub1_rnn_separate_4w.txt
-export CUDA_VISIBLE_DEVICES=0
+export CUDA_VISIBLE_DEVICES=0 
 python3 -m nrm.nrm  --beam_width=10 --out_dir=models/real_separate_word_40000_level  --inference_input_file=/ldev/tensorflow/nmt/data/wordlevel/test.message  --inference_output_file=decoded/word_rnn_separate_4w_10_test_f >> decoded/log/word_rnn_separate_4w.txt
 export CUDA_VISIBLE_DEVICES=0
 python3 -m nrm.nrm  --beam_width=10 --out_dir=models/real_separate_word_40000_level/best_rouge  --inference_input_file=/ldev/tensorflow/nmt/data/wordlevel/test.message  --inference_output_file=decoded/word_rnn_separate_4w_10_test_fbest_rouge >> decoded/log/word_rnn_separate_4w.txt
