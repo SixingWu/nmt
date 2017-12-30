@@ -37,7 +37,7 @@ for beam_size in beam_sizes:
                 bash += ' --out_dir=%s ' % model_path
                 bash += ' --inference_input_file=%s.message ' % input_file
                 bash += ' --inference_output_file=%s.inf.response' % output_file
-                bash += ' >> decoded/log/%s.log' % output_file
+                bash += ' >> decoded/log/%s_%d_%s_f%s.txt' % (task,beam_size,test_file,folder.replace('/',''))
             print('export CUDA_VISIBLE_DEVICES=0')
             print(bash)
 
