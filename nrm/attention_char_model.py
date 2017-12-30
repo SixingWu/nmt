@@ -145,10 +145,16 @@ class AttentionCharModel(attention_model.AttentionModel):
           segment_length = tf.cast(tf.ceil(self.iterator.source_sequence_length / width_strides), tf.int64)
 
           if hparams.residual_cnn_layer:
-              assert int(width_strides) == 1,'resudual_cnn_layer asks width_strides == 1'
-              utils.print_out("Residual CNN is enabled")
-              encoder_emb_inp = tf.concat([encoder_emb_inp,original_encoder_emb_inp],axis=-1)
-
+              if hparams.residual_cnn_layer_type == 'concat':
+                  assert int(width_strides) == 1,'concat resudual_cnn_layer asks width_strides == 1'
+                  utils.print_out("Residual CNN is enabled")
+                  encoder_emb_inp = tf.concat([encoder_emb_inp,original_encoder_emb_inp],axis=-1)
+              elif hparams.residual_cnn_layer_type == 'transform':
+                  assert int(width_strides) == 1, 'transformed resudual_cnn_layer asks width_strides == 1'
+                  W_transform = tf.Variable(tf.truncated_normal([filter_nums, hparams.num_units], stddev=0.1), name="res_transform_w")
+                  b_transform = tf.Variable(tf.truncated_normal([hparams.num_units], stddev=0.1),name="res_transform_b")
+                  encoder_emb_inp = tf.multiply(W_transform,encoder_emb_inp) + b_transform
+                  encoder_emb_inp = encoder_emb_inp + original_encoder_emb_inp
           # Encoder_outpus: [max_time, batch_size, num_units]
           if hparams.encoder_type == "uni":
               utils.print_out("  num_layers = %d, num_residual_layers=%d" %
