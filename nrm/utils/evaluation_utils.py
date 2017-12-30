@@ -18,6 +18,7 @@ import codecs
 import os
 import re
 import subprocess
+import sys
 
 import tensorflow as tf
 
@@ -26,6 +27,11 @@ from ..scripts import rouge
 
 
 __all__ = ["evaluate"]
+
+
+
+
+
 
 
 def evaluate(ref_file, trans_file, metric, subword_option=None):
@@ -182,3 +188,12 @@ def _moses_bleu(multi_bleu_script, tgt_test, trans_file, subword_option=None):
   bleu_score = float(m.group(1))
 
   return bleu_score
+
+if __name__ == "__main__":
+  ref_file = sys.argv[1]
+  trans_file = sys.argv[2]
+  print('res file: %s' % ref_file)
+  print('trans_file:%s' % trans_file)
+  for metric in ['bleu','rouge','accuracy','word_accuracy']:
+    score = evaluate(ref_file,trans_file,metric)
+    print('%s\t%s' % (metric, score))

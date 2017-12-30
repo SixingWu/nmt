@@ -1,0 +1,301 @@
++ beam search no pooling res
+export CUDA_VISIBLE_DEVICES=1
+nohup  python3 -m nrm.nrm \
+    --beam_width=10\
+    --num_units=320 \
+    --residual_cnn_layer=True\
+    --share_vocab=False \
+    --src_max_len=30 \
+    --num_gpus=2 \
+    --tgt_max_len=30 \
+    --batch_size=256 \
+    --encoder_type=bi \
+    --attention=luong\
+    --width_strides=1\
+    --cnn_min_window_size=1\
+    --cnn_max_window_size=5\
+    --high_way_layer=4\
+    --filters_per_windows=250\
+    --src=message --tgt=response \
+    --vocab_prefix=/ldev/tensorflow/nmt/data/charlevel/vocab.separate  \
+    --train_prefix=/ldev/tensorflow/nmt/data/charlevel/train\
+    --dev_prefix=/ldev/tensorflow/nmt/data/charlevel/dev \
+    --test_prefix=/ldev/tensorflow/nmt/data/charlevel/test \
+    --out_dir=models/cnn_separate_nopoolingres_char_level \
+    --num_train_steps=100000 \
+    --attention_architecture=char_standard \
+    --steps_per_stats=200  >> logs/cnn_separate_nopoolingres_char_level.txt &
+    98931
+
+  python3 -m nrm.nrm \
+       --beam_width=10\
+       --out_dir=models/cnn_separate_nopoolingres_char_level \
+       --inference_input_file=/ldev/tensorflow/nmt/data/charlevel/dev.message \
+       --inference_output_file=/ldev/tensorflow/nmt/data/charlevel/dev.message.beam10
+
+
++ beam search no pooling
+nohup python3 -m nrm.nrm \
+    --beam_width=10\
+    --num_units=320 \
+    --share_vocab=False \
+    --src_max_len=30 \
+    --num_gpus=1 \
+    --tgt_max_len=30 \
+    --batch_size=256 \
+    --encoder_type=bi \
+    --attention=luong\
+    --width_strides=1\
+    --cnn_min_window_size=1\
+    --cnn_max_window_size=5\
+    --high_way_layer=4\
+    --filters_per_windows=250\
+    --src=message --tgt=response \
+    --vocab_prefix=/ldev/tensorflow/nmt/data/charlevel/vocab.separate  \
+    --train_prefix=/ldev/tensorflow/nmt/data/charlevel/train\
+    --dev_prefix=/ldev/tensorflow/nmt/data/charlevel/dev \
+    --test_prefix=/ldev/tensorflow/nmt/data/charlevel/test \
+    --out_dir=models/cnn_separate_nopooling_char_level \
+    --num_train_steps=100000 \
+    --attention_architecture=char_standard \
+    --steps_per_stats=200  >> logs/cnn_separate_nopooling_char_level.txt &
+    77017
++ beam search
+nohup python3 -m nrm.nrm \
+    --beam_width=10\
+    --num_units=320 \
+    --share_vocab=False \
+    --src_max_len=30 \
+    --num_gpus=2 \
+    --tgt_max_len=30 \
+    --batch_size=256 \
+    --encoder_type=bi \
+    --attention=luong\
+    --width_strides=2\
+    --cnn_min_window_size=1\
+    --cnn_max_window_size=5\
+    --high_way_layer=4\
+    --filters_per_windows=250\
+    --src=message --tgt=response \
+    --vocab_prefix=/ldev/tensorflow/nmt/data/charlevel/vocab.separate  \
+    --train_prefix=/ldev/tensorflow/nmt/data/charlevel/train\
+    --dev_prefix=/ldev/tensorflow/nmt/data/charlevel/dev \
+    --test_prefix=/ldev/tensorflow/nmt/data/charlevel/test \
+    --out_dir=models/cnn_separate_original3_beam_char_level \
+    --num_train_steps=100000 \
+    --attention_architecture=char_standard \
+    --steps_per_stats=200  >> logs/cnn_separate_original3_beam_char_level.txt &
+    38459
++ beam search
+nohup python3 -m nrm.nrm \
+    --beam_width=10\
+    --num_units=320 \
+    --share_vocab=False \
+    --src_max_len=30 \
+    --num_gpus=1 \
+    --tgt_max_len=30 \
+    --batch_size=256 \
+    --encoder_type=bi \
+    --attention=luong\
+    --width_strides=3\
+    --cnn_min_window_size=1\
+    --cnn_max_window_size=5\
+    --high_way_layer=4\
+    --filters_per_windows=250\
+    --src=message --tgt=response \
+    --vocab_prefix=/ldev/tensorflow/nmt/data/charlevel/vocab.separate  \
+    --train_prefix=/ldev/tensorflow/nmt/data/charlevel/train\
+    --dev_prefix=/ldev/tensorflow/nmt/data/charlevel/dev \
+    --test_prefix=/ldev/tensorflow/nmt/data/charlevel/test \
+    --out_dir=models/cnn_separate_original_beam_char_level \
+    --num_train_steps=100000 \
+    --attention_architecture=char_standard \
+    --steps_per_stats=200  >> logs/cnn_separate_original_beam_char_level.txt &
+38307
+nohup python3 -m nrm.nrm \
+    --num_units=320 \
+    --share_vocab=False \
+    --src_max_len=30 \
+    --num_gpus=1 \
+    --tgt_max_len=30 \
+    --batch_size=256 \
+    --encoder_type=bi \
+    --attention=luong\
+    --width_strides=3\
+    --cnn_min_window_size=1\
+    --cnn_max_window_size=5\
+    --high_way_layer=4\
+    --filters_per_windows=200\
+    --src=message --tgt=response \
+    --vocab_prefix=/ldev/tensorflow/nmt/data/charlevel/vocab.separate  \
+    --train_prefix=/ldev/tensorflow/nmt/data/charlevel/train\
+    --dev_prefix=/ldev/tensorflow/nmt/data/charlevel/dev \
+    --test_prefix=/ldev/tensorflow/nmt/data/charlevel/test \
+    --out_dir=models/cnn_separate_original_char_level \
+    --num_train_steps=100000 \
+    --attention_architecture=char_standard \
+    --steps_per_stats=200  >> logs/cnn_separate_original_char_level.txt &
+120500
+
+nohup python3 -m nrm.nrm \
+    --num_units=320 \
+    --share_vocab=False \
+    --src_max_len=30 \
+    --num_gpus=2 \
+    --tgt_max_len=30 \
+    --batch_size=256 \
+    --encoder_type=bi \
+    --attention=luong\
+    --width_strides=5\
+    --cnn_min_window_size=1\
+    --cnn_max_window_size=8\
+    --high_way_layer=4\
+    --filters_per_windows=200\
+    --src=message --tgt=response \
+    --vocab_prefix=/ldev/tensorflow/nmt/data/charlevel/vocab.separate  \
+    --train_prefix=/ldev/tensorflow/nmt/data/charlevel/train\
+    --dev_prefix=/ldev/tensorflow/nmt/data/charlevel/dev \
+    --test_prefix=/ldev/tensorflow/nmt/data/charlevel/test \
+    --out_dir=models/cnn_separate_original2_char_level \
+    --num_train_steps=100000 \
+    --attention_architecture=char_standard \
+    --steps_per_stats=200  >> logs/cnn_separate_original2_char_level.txt &
+122847
+
+
+nohup python3 -m nrm.nrm \
+    --num_units=320 \
+    --share_vocab=False \
+    --src_max_len=30 \
+    --num_gpus=2 \
+    --tgt_max_len=30 \
+    --batch_size=256 \
+    --encoder_type=bi \
+    --attention=luong\
+    --src=message --tgt=response \
+    --vocab_prefix=/ldev/tensorflow/nmt/data/charlevel/vocab.separate  \
+    --train_prefix=/ldev/tensorflow/nmt/data/charlevel/train\
+    --dev_prefix=/ldev/tensorflow/nmt/data/charlevel/dev \
+    --test_prefix=/ldev/tensorflow/nmt/data/charlevel/test \
+    --out_dir=models/cnn_test \
+    --num_train_steps=100000 \
+    --attention_architecture=char_standard \
+    --steps_per_stats=200  >> logs/cnn_separate_char_level.txt &
+
+29535
+
+
+nohup python3 -m nrm.nrm \
+    --num_units=320 \
+    --share_vocab=False \
+    --src_max_len=30 \
+    --tgt_max_len=30 \
+    --batch_size=256 \
+    --encoder_type=bi \
+    --attention=luong\
+    --src=message --tgt=response \
+    --vocab_prefix=/ldev/tensorflow/nmt/data/charlevel/vocab.separate  \
+    --train_prefix=/ldev/tensorflow/nmt/data/charlevel/train\
+    --dev_prefix=/ldev/tensorflow/nmt/data/charlevel/dev \
+    --test_prefix=/ldev/tensorflow/nmt/data/charlevel/test \
+    --out_dir=models/separate_char_level \
+    --num_train_steps=100000 \
+    --steps_per_stats=200 >> logs/separate_char_level.txt &
+
+33272 提前终止，已经训练完成
+
+nohup python3 -m nrm.nrm \
+    --num_units=320 \
+    --src_max_len=30 \
+    --tgt_max_len=30 \
+    --batch_size=256 \
+    --encoder_type=bi \
+    --attention=luong\
+    --src=message --tgt=response \
+    --vocab_prefix=/ldev/tensorflow/nmt/data/charlevel/vocab  \
+    --train_prefix=/ldev/tensorflow/nmt/data/charlevel/train\
+    --dev_prefix=/ldev/tensorflow/nmt/data/charlevel/dev \
+    --test_prefix=/ldev/tensorflow/nmt/data/charlevel/test \
+    --out_dir=models/shared_char_level \
+    --num_train_steps=100000 \
+    --steps_per_stats=200 >> logs/shared_char_level.txt &
+33356
+
+
+
+nohup python3 -m nrm.nrm \
+    --num_units=320 \
+    --num_gpus=2 \
+    --share_vocab=False \
+    --src_max_len=20 \
+    --tgt_max_len=20 \
+    --batch_size=256 \
+    --encoder_type=bi \
+    --attention=luong\
+    --src=message --tgt=response \
+    --vocab_prefix=/ldev/tensorflow/nmt/data/wordlevel/vocab.80000.separate  \
+    --train_prefix=/ldev/tensorflow/nmt/data/wordlevel/train\
+    --dev_prefix=/ldev/tensorflow/nmt/data/wordlevel/dev \
+    --test_prefix=/ldev/tensorflow/nmt/data/wordlevel/test \
+    --out_dir=models/shared_word_80000_level \
+    --num_train_steps=100000 \
+    --steps_per_stats=200 >> logs/separate_word_80000_level.txt &
+118763
+
+###########跑错了，泡成shared的了
+nohup python3 -m nrm.nrm \
+    --num_units=320 \
+    --num_gpus=2 \
+    --src_max_len=20 \
+    --tgt_max_len=20 \
+    --batch_size=256 \
+    --encoder_type=bi \
+    --attention=luong\
+    --src=message --tgt=response \
+    --vocab_prefix=/ldev/tensorflow/nmt/data/wordlevel/vocab.40000  \
+    --train_prefix=/ldev/tensorflow/nmt/data/wordlevel/train\
+    --dev_prefix=/ldev/tensorflow/nmt/data/wordlevel/dev \
+    --test_prefix=/ldev/tensorflow/nmt/data/wordlevel/test \
+    --out_dir=models/separate_word_40000_level \
+    --num_train_steps=100000 \
+    --steps_per_stats=200 >> logs/separate_word_40000_level.txt &
+
+nohup python3 -m nrm.nrm \
+    --num_units=320 \
+    --num_gpus=2 \
+    --share_vocab=False \
+    --src_max_len=20 \
+    --tgt_max_len=20 \
+    --batch_size=256 \
+    --encoder_type=bi \
+    --attention=luong\
+    --src=message --tgt=response \
+    --vocab_prefix=/ldev/tensorflow/nmt/data/wordlevel/vocab.40000.separate  \
+    --train_prefix=/ldev/tensorflow/nmt/data/wordlevel/train\
+    --dev_prefix=/ldev/tensorflow/nmt/data/wordlevel/dev \
+    --test_prefix=/ldev/tensorflow/nmt/data/wordlevel/test \
+    --out_dir=models/real_separate_word_40000_level \
+    --num_train_steps=100000 \
+    --steps_per_stats=200 >> logs/real_separate_word_40000_level.txt &
+
+
+nohup python3 -m nrm.nrm \
+    --num_units=320 \
+    --share_vocab=False \
+    --num_gpus=1 \
+    --src_max_len=17 \
+    --tgt_max_len=17 \
+    --batch_size=256 \
+    --encoder_type=bi \
+    --attention=luong\
+    --src=message --tgt=response \
+    --vocab_prefix=/ldev/tensorflow/nmt/data/sublevel/vocab.80000.separate \
+    --train_prefix=/ldev/tensorflow/nmt/data/sublevel/train\
+    --dev_prefix=/ldev/tensorflow/nmt/data/sublevel/dev \
+    --test_prefix=/ldev/tensorflow/nmt/data/sublevel/test \
+    --out_dir=models/separate_sub_80000_level \
+    --num_train_steps=100000 \
+    --steps_per_stats=200 >> logs/separate_sub_80000_level.txt &
+
+9589
+9589
