@@ -37,7 +37,7 @@ for beam_size in beam_sizes:
                 bash += ' --out_dir=%s ' % model_path
                 bash += ' --inference_input_file=%s.message ' % input_file
                 bash += ' --inference_output_file=%s' % output_file
-                bash += ' --> decoded/log/%s.txt' % task
+                bash += ' >> decoded/log/%s.txt' % task
             print(bash)
 
 
