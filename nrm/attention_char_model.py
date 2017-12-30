@@ -153,7 +153,7 @@ class AttentionCharModel(attention_model.AttentionModel):
                   assert int(width_strides) == 1, 'transformed resudual_cnn_layer asks width_strides == 1'
                   W_transform = tf.Variable(tf.truncated_normal([filter_nums, hparams.num_units], stddev=0.1), name="res_transform_w")
                   b_transform = tf.Variable(tf.truncated_normal([hparams.num_units], stddev=0.1),name="res_transform_b")
-                  encoder_emb_inp = tf.multiply(tf.reshape(encoder_emb_inp,[-1,filter_nums]), W_transform) + b_transform
+                  encoder_emb_inp = tf.matmul(tf.reshape(encoder_emb_inp,[-1,filter_nums]), W_transform) + b_transform
                   encoder_emb_inp = tf.reshape(encoder_emb_inp,[max_time,batch_size,num_units])
                   encoder_emb_inp = encoder_emb_inp + original_encoder_emb_inp
           # Encoder_outpus: [max_time, batch_size, num_units]
