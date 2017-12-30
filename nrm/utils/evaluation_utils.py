@@ -194,6 +194,6 @@ if __name__ == "__main__":
   trans_file = sys.argv[2]
   print('res file: %s' % ref_file)
   print('trans_file:%s' % trans_file)
-  for metric in ['bleu','rouge','accuracy','word_accuracy']:
+  for metric in ['bleu','rouge','accuracy']:
     score = evaluate(ref_file,trans_file,metric)
     print('%s\t%s' % (metric, score))
