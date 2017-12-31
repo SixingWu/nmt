@@ -90,9 +90,6 @@ def load_hparams(model_dir):
       try:
         hparams_values = json.load(f)
         hparams = tf.contrib.training.HParams(**hparams_values)
-        if 'infer_beam_width' in hparams:
-          del hparams['infer_beam_width']
-          print_out('deleted infer_beam_width')
       except ValueError:
         print_out("  can't load hparams file")
         return None

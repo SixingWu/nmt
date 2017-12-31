@@ -546,9 +546,14 @@ def run_main(flags, default_hparams, train_fn, inference_fn, target_session=""):
   hparams = create_or_load_hparams(
       out_dir, default_hparams, flags.hparams_path, save_hparams=(jobid==0))
 
+
+
+
   if flags.inference_input_file:
     # Inference indices
     hparams.inference_indices = None
+    hparams.infer_beam_width = flags.infer_beam_width
+    utils.print_out('real infer_Beam_size %d' % hparams.infer_beam_width)
     if flags.inference_list:
       (hparams.inference_indices) = (
           [int(token)  for token in flags.inference_list.split(",")])
