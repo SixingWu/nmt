@@ -163,7 +163,7 @@ def single_worker_inference(infer_model,
           ref_file=None,
           metrics=hparams.metrics,
           subword_option=hparams.subword_option,
-          beam_width=hparams.beam_width,
+          beam_width=hparams.infer_beam_width,
           tgt_eos=hparams.eos,
           num_translations_per_input=hparams.num_translations_per_input)
 
@@ -211,7 +211,7 @@ def multi_worker_inference(infer_model,
         ref_file=None,
         metrics=hparams.metrics,
         subword_option=hparams.subword_option,
-        beam_width=hparams.beam_width,
+        beam_width=hparams.infer_beam_width,
         tgt_eos=hparams.eos,
         num_translations_per_input=hparams.num_translations_per_input)
 
