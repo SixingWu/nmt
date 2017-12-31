@@ -265,6 +265,11 @@ def add_arguments(parser):
       beam width when using beam search decoder. If 0 (default), use standard
       decoder with greedy helper.\
       """))
+  parser.add_argument("--infer_beam_width", type=int, default=0,
+                      help=("""\
+        beam width when using beam search decoder. If 0 (default), use standard
+        decoder with greedy helper.\
+        """))
   parser.add_argument("--length_penalty_weight", type=float, default=0.0,
                       help="Length penalty for beam search.")
   parser.add_argument("--num_translations_per_input", type=int, default=1,
@@ -346,6 +351,7 @@ def create_hparams(flags):
       tgt_max_len_infer=flags.tgt_max_len_infer,
       infer_batch_size=flags.infer_batch_size,
       beam_width=flags.beam_width,
+      infer_beam_width=flags.infer_beam_width,
       length_penalty_weight=flags.length_penalty_weight,
       num_translations_per_input=flags.num_translations_per_input,
 

@@ -25,6 +25,7 @@ source = {
     'sub2':'/ldev/tensorflow/nmt/data/sublevel2/'
 }
 
+
 for beam_size in beam_sizes:
     for task in model_types.keys():
         for folder in ['','/best_rouge','/best_bleu']:
@@ -38,8 +39,9 @@ for beam_size in beam_sizes:
                 bash += ' --inference_input_file=%s.message ' % input_file
                 bash += ' --inference_output_file=%s.inf.response' % output_file
                 bash += ' >> decoded/log/%s_%d_%s_f%s.txt' % (task,beam_size,test_file,folder.replace('/',''))
-            print('export CUDA_VISIBLE_DEVICES=0')
-            print(bash)
+
+                print('export CUDA_VISIBLE_DEVICES=0')
+                print(bash)
 
 
 
