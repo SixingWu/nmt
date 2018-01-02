@@ -553,7 +553,7 @@ def run_main(flags, default_hparams, train_fn, inference_fn, target_session=""):
     # Inference indices
     hparams.inference_indices = None
     hparams.infer_beam_width = flags.infer_beam_width
-    hparams.beam_width = flags.infer_beam_width
+    hparams.beam_width = flags.infer_beam_width 
     utils.print_out('real infer_Beam_size %d' % hparams.infer_beam_width)
     if flags.inference_list:
       (hparams.inference_indices) = (

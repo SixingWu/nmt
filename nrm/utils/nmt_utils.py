@@ -42,6 +42,7 @@ def decode_and_evaluate(name,
   # Decode
   if decode:
     utils.print_out("  decoding to output %s." % trans_file)
+    utils.print_out(" beam_size: %d" % beam_width)
 
     start_time = time.time()
     num_sentences = 0
