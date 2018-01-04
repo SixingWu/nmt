@@ -45,9 +45,11 @@ def evaluate(ref_file, trans_file, metric, subword_option=None):
     evaluation_score = _rouge(ref_file, trans_file,
                               subword_option=subword_option)
   elif metric.lower() == "accuracy":
-    evaluation_score = _accuracy(ref_file, trans_file)
+    evaluation_score = _accuracy(ref_file, trans_file,
+                             subword_option=subword_option)
   elif metric.lower() == "word_accuracy":
-    evaluation_score = _word_accuracy(ref_file, trans_file)
+    evaluation_score = _word_accuracy(ref_file, trans_file,
+                             subword_option=subword_option)
   else:
     raise ValueError("Unknown metric %s" % metric)
 
@@ -66,6 +68,9 @@ def _clean(sentence, subword_option):
   elif subword_option == "spm":
     sentence = u"".join(sentence.split()).replace(u"\u2581", u" ").lstrip()
 
+  # speical for chinese
+  sentence = sentence.replace(" ","")
+  sentence = " ".join(sentence)
   return sentence
 
 
@@ -90,12 +95,14 @@ def _bleu(ref_file, trans_file, subword_option=None):
       reference_list.append(reference.split(" "))
     per_segment_references.append(reference_list)
 
+  #print(per_segment_references)
+
   translations = []
   with codecs.getreader("utf-8")(tf.gfile.GFile(trans_file, "rb")) as fh:
     for line in fh:
-      line = _clean(line, subword_option=None)
+      line = _clean(line, subword_option=subword_option)
       translations.append(line.split(" "))
-
+  #print(translations)
   # bleu_score, precisions, bp, ratio, translation_length, reference_length
   bleu_score, _, _, _, _, _ = bleu.compute_bleu(
       per_segment_references, translations, max_order, smooth)
@@ -114,37 +121,41 @@ def _rouge(ref_file, summarization_file, subword_option=None):
   with codecs.getreader("utf-8")(
       tf.gfile.GFile(summarization_file, "rb")) as fh:
     for line in fh:
-      hypotheses.append(_clean(line, subword_option=None))
+      hypotheses.append(_clean(line, subword_option=subword_option))
 
   rouge_score_map = rouge.rouge(hypotheses, references)
   return 100 * rouge_score_map["rouge_l/f_score"]
 
 
-def _accuracy(label_file, pred_file):
+def _accuracy(label_file, pred_file,subword_option=None):
   """Compute accuracy, each line contains a label."""
 
-  with codecs.getreader("utf-8")(tf.gfile.GFile(label_file, "rb")) as label_fh:
-    with codecs.getreader("utf-8")(tf.gfile.GFile(pred_file, "rb")) as pred_fh:
+  with open(label_file, "r", encoding='utf-8') as label_fh:
+    with open(pred_file, "r", encoding='utf-8') as pred_fh:
       count = 0.0
       match = 0.0
       for label in label_fh:
         label = label.strip()
+        label = " ".join(_clean(label,subword_option))
         pred = pred_fh.readline().strip()
+        pred = " ".join(_clean(pred,subword_option))
         if label == pred:
           match += 1
         count += 1
   return 100 * match / count
 
 
-def _word_accuracy(label_file, pred_file):
+def _word_accuracy(label_file, pred_file,subword_option=None):
   """Compute accuracy on per word basis."""
 
-  with codecs.getreader("utf-8")(tf.gfile.GFile(label_file, "r")) as label_fh:
-    with codecs.getreader("utf-8")(tf.gfile.GFile(pred_file, "r")) as pred_fh:
+  with open(label_file, "r", encoding='utf-8') as label_fh:
+    with open(pred_file, "r", encoding='utf-8') as pred_fh:
       total_acc, total_count = 0., 0.
       for sentence in label_fh:
+        sentence = " ".join(_clean(sentence, subword_option))
         labels = sentence.strip().split(" ")
-        preds = pred_fh.readline().strip().split(" ")
+        preds = " ".join(_clean(pred_fh.readline(), subword_option))
+        preds = preds.strip().split(" ")
         match = 0.0
         for pos in range(min(len(labels), len(preds))):
           label = labels[pos]
@@ -192,8 +203,14 @@ def _moses_bleu(multi_bleu_script, tgt_test, trans_file, subword_option=None):
 if __name__ == "__main__":
   ref_file = sys.argv[1]
   trans_file = sys.argv[2]
+  subword = sys.argv[3]
+
+  if subword == 'bpe':
+    subword='bpe'
+  else:
+    subword=None
   print('res file: %s' % ref_file)
   print('trans_file:%s' % trans_file)
-  for metric in ['bleu','rouge','accuracy']:
-    score = evaluate(ref_file,trans_file,metric)
+  for metric in ['bleu','rouge','accuracy','word_accuracy']:
+    score = evaluate(ref_file,trans_file,metric,subword_option=subword)
     print('%s\t%s' % (metric, score))
