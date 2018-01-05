@@ -50,7 +50,7 @@ def add_arguments(parser):
   parser.add_argument("--cnn_min_window_size", type=int, default=1, help="cnn min size.")
   parser.add_argument("--cnn_max_window_size", type=int, default=5, help="cnn max size.")
   parser.add_argument("--filters_per_windows", type=int, default=200, help="cnn per.")
-  parser.add_argument("--high_way_layer", type=int, default=4, help="high way size.")
+  parser.add_argument("--high_way_layer", type=int, default=4, help="high way size. >= 1")
   parser.add_argument("--residual_cnn_layer", type="bool", nargs="?", const=True,
                       default=False,
                       help="Whether to add residual connections.")
