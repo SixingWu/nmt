@@ -42,6 +42,7 @@ def add_arguments(parser):
 
 
   # char-level
+
   parser.add_argument("--embedding_model", type=str, default="default", help="""\
         rnn | cnn| bahdanau | normed_bahdanau or set to "" 
         """)
@@ -54,7 +55,9 @@ def add_arguments(parser):
   parser.add_argument("--residual_cnn_layer", type="bool", nargs="?", const=True,
                       default=False,
                       help="Whether to add residual connections.")
+
   parser.add_argument("--residual_cnn_layer_type", type=str, default='concat', help="cnn min size.")
+  parser.add_argument("--high_way_type", type=str, default='uniform', help="cnn min size.")
   # network
   parser.add_argument("--num_units", type=int, default=32, help="Network size.")
   parser.add_argument("--num_layers", type=int, default=2,
@@ -310,6 +313,7 @@ def create_hparams(flags):
       high_way_layer=flags.high_way_layer,
       filters_per_windows=flags.filters_per_windows,
       residual_cnn_layer=flags.residual_cnn_layer,
+      high_way_type=flags.high_way_type,
 
       # Networks
       num_units=flags.num_units,
