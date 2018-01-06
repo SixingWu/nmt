@@ -156,6 +156,23 @@ class AttentionCharModel(attention_model.AttentionModel):
                   encoder_emb_inp = tf.matmul(tf.reshape(encoder_emb_inp,[-1,filter_nums]), W_transform) + b_transform
                   encoder_emb_inp = tf.reshape(encoder_emb_inp,[max_time,batch_size,num_units])
                   encoder_emb_inp = encoder_emb_inp + original_encoder_emb_inp
+              elif hparams.residual_cnn_layer_type == 'transformGate':
+                  assert int(width_strides) == 1, 'transformed resudual_cnn_layer asks width_strides == 1'
+                  W_transform = tf.Variable(tf.truncated_normal([filter_nums, hparams.num_units], stddev=0.1), name="res_transform_w")
+                  b_transform = tf.Variable(tf.truncated_normal([hparams.num_units], stddev=0.1),name="res_transform_b")
+                  #res [max_time*batch_size, num_units]
+                  encoder_emb_inp = tf.matmul(tf.reshape(encoder_emb_inp,[-1,filter_nums]), W_transform) + b_transform
+
+                  gate_W = tf.Variable(tf.truncated_normal([hparams.num_units, hparams.num_units], stddev=0.1), name="gate_transform_b")
+                  gate_b = tf.Variable(tf.truncated_normal([hparams.num_units], stddev=0.1), name="gate_transform_b")
+
+                  gate_val = tf.sigmoid(tf.matmul(encoder_emb_inp, gate_W) + gate_b)
+                  encoder_emb_inp = tf.multiply(encoder_emb_inp, gate_val)
+                  original_encoder_emb_inp = tf.reshape(original_encoder_emb_inp,[-1,num_units])
+                  original_encoder_emb_inp = tf.multiply(original_encoder_emb_inp, 1.0 - gate_val)
+                  encoder_emb_inp = tf.reshape(encoder_emb_inp, [max_time, batch_size, num_units])
+                  original_encoder_emb_inp = tf.reshape(original_encoder_emb_inp, [max_time, batch_size, num_units])
+                  encoder_emb_inp = encoder_emb_inp + original_encoder_emb_inp
               elif hparams.residual_cnn_layer_type == 'transformRe':
                   assert int(width_strides) == 1, 'transformed resudual_cnn_layer asks width_strides == 1'
                   W_transform = tf.Variable(tf.truncated_normal([filter_nums, hparams.num_units], stddev=0.1),
