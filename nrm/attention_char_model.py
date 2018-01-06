@@ -130,14 +130,23 @@ class AttentionCharModel(attention_model.AttentionModel):
 
           # [batch_size, segment_len, filter_nums=num_windows*filters_per_windows]
 
-          stacked_results = tf.concat(pool_outputs, axis=-1)
+          if hparams.high_way_type == 'uniform':
+              stacked_results = tf.concat(pool_outputs, axis=-1)
+              high_way_tmp = tf.reshape(stacked_results, [-1, filter_nums])
+              for i in range(high_way_layers):
+                  high_way_tmp = highway(high_way_tmp, filter_nums, tf.nn.relu, name='highway_%d' % i)
+              highway_outputs = tf.reshape(high_way_tmp, [batch_size, segment_len, filter_nums])
+          elif hparams.high_way_type == 'per_filter':
+              highway_results = []
+              for w,pool_result in enumerate(pool_outputs):
+                  pool_highway_tmp = tf.reshape(pool_result,[-1,filters_per_windows])
+                  for i in range(high_way_layers):
+                      pool_highway_tmp = highway(pool_highway_tmp, filters_per_windows, tf.nn.relu, name='highway_w%d_%d' % (w+min_windows,i))
+                  highway_results.append(pool_highway_tmp)
+              stacked_results = tf.concat(highway_results, axis=-1)
+              highway_outputs = tf.reshape(stacked_results, [batch_size, segment_len, filter_nums])
 
 
-          high_way_tmp = tf.reshape(stacked_results, [-1, filter_nums])
-          for i in range(high_way_layers):
-              high_way_tmp = highway(high_way_tmp, filter_nums, tf.nn.relu, name='highway_%d' % i)
-
-          highway_outputs = tf.reshape(high_way_tmp, [batch_size, segment_len, filter_nums])
           # [time_width, batch, height]
           encoder_emb_inp = tf.transpose(highway_outputs, perm=[1, 0, 2])
 
