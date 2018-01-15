@@ -75,9 +75,8 @@ def _clean(sentence, subword_option):
 
 
 # Follow //transconsole/localization/machine_translation/metrics/bleu_calc.py
-def _bleu(ref_file, trans_file, subword_option=None):
+def _bleu(ref_file, trans_file,max_order=4, subword_option=None):
   """Compute BLEU scores and handling BPE."""
-  max_order = 4
   smooth = False
 
   ref_files = [ref_file]

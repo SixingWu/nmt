@@ -48,10 +48,10 @@ def add_arguments(parser):
         """)
   parser.add_argument("--width_strides", type=int, default=3,
                       help="width_strides")
-  parser.add_argument("--cnn_min_window_size", type=int, default=1, help="cnn min size.")
-  parser.add_argument("--cnn_max_window_size", type=int, default=5, help="cnn max size.")
-  parser.add_argument("--filters_per_windows", type=int, default=200, help="cnn per.")
-  parser.add_argument("--high_way_layer", type=int, default=4, help="high way size. >= 1")
+  parser.add_argument("--cnn_min_window_size", type=int, default=1, help="cnn min windows size.")
+  parser.add_argument("--cnn_max_window_size", type=int, default=5, help="cnn max windows size.")
+  parser.add_argument("--filters_per_windows", type=int, default=200, help="filter_depth")
+  parser.add_argument("--high_way_layer", type=int, default=4, help="highway network layers")
   parser.add_argument("--residual_cnn_layer", type="bool", nargs="?", const=True,
                       default=False,
                       help="Whether to add residual connections.")
@@ -59,6 +59,7 @@ def add_arguments(parser):
   parser.add_argument("--residual_cnn_layer_type", type=str, default='concat', help="cnn min size.")
   parser.add_argument("--high_way_type", type=str, default='uniform', help="cnn min size.")
   # network
+  parser.add_argument("--embed_dim", type=int, default=640, help="Embedding Vector Dimension")
   parser.add_argument("--num_units", type=int, default=32, help="Network size.")
   parser.add_argument("--num_layers", type=int, default=2,
                       help="Network depth.")
@@ -316,6 +317,7 @@ def create_hparams(flags):
       high_way_type=flags.high_way_type,
 
       # Networks
+      embed_dim=flags.embed_dim,
       num_units=flags.num_units,
       num_layers=flags.num_layers,
       dropout=flags.dropout,

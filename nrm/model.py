@@ -223,14 +223,17 @@ class BaseModel(object):
         name="learning_rate_decay_cond")
 
   def init_embeddings(self, hparams, scope):
-    """Init embeddings."""
+    """
+        CONSTRUCT_EMBEDDING
+        Init embeddings.
+    """
     self.embedding_encoder, self.embedding_decoder = (
         model_helper.create_emb_for_encoder_and_decoder(
             share_vocab=hparams.share_vocab,
             src_vocab_size=self.src_vocab_size,
             tgt_vocab_size=self.tgt_vocab_size,
-            src_embed_size=hparams.num_units,
-            tgt_embed_size=hparams.num_units,
+            src_embed_size=hparams.embed_dim,
+            tgt_embed_size=hparams.embed_dim,
             num_partitions=hparams.num_embeddings_partitions,
             src_vocab_file=hparams.src_vocab_file,
             tgt_vocab_file=hparams.tgt_vocab_file,
@@ -539,6 +542,8 @@ class Model(BaseModel):
 
   def _build_encoder(self, hparams):
     """Build an encoder."""
+    utils.print_out("utilizing the basic model to build encoder")
+
     num_layers = hparams.num_layers
     num_residual_layers = hparams.num_residual_layers
 
@@ -556,7 +561,7 @@ class Model(BaseModel):
 
       # Encoder_outpus: [max_time, batch_size, num_units]
       if hparams.encoder_type == "uni":
-        utils.print_out("  num_layers = %d, num_residual_layers=%d" %
+        utils.print_out("build a uni-encoder: num_layers = %d, num_residual_layers=%d" %
                         (num_layers, num_residual_layers))
         cell = self._build_encoder_cell(
             hparams, num_layers, num_residual_layers)
@@ -569,9 +574,9 @@ class Model(BaseModel):
             time_major=self.time_major,
             swap_memory=True)
       elif hparams.encoder_type == "bi":
-        num_bi_layers = int(num_layers / 2)
-        num_bi_residual_layers = int(num_residual_layers / 2)
-        utils.print_out("  num_bi_layers = %d, num_bi_residual_layers=%d" %
+        num_bi_layers = num_layers
+        num_bi_residual_layers = num_residual_layers
+        utils.print_out("build a num_bi_layers = %d, num_bi_residual_layers=%d" %
                         (num_bi_layers, num_bi_residual_layers))
 
         encoder_outputs, bi_encoder_state = (
