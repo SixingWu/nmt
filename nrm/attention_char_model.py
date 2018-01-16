@@ -82,6 +82,7 @@ class AttentionCharModel(attention_model.AttentionModel):
           max_time = dims[0]
           batch_size = dims[1]
           num_units = hparams.num_units
+          embed_dim = hparams.embed_dim
 
           min_windows = hparams.cnn_min_window_size
           max_windows = hparams.cnn_max_window_size
@@ -91,7 +92,7 @@ class AttentionCharModel(attention_model.AttentionModel):
           utils.print_out('debug:')
           print(tf.shape(source))
           print(tf.shape(encoder_emb_inp))
-          conv_inputs = tf.reshape(encoder_emb_inp, [max_time, batch_size, num_units, 1])
+          conv_inputs = tf.reshape(encoder_emb_inp, [max_time, batch_size, embed_dim, 1])
           # [batch, height = num_units, width = max_time, channels = 1]
           conv_inputs = tf.transpose(conv_inputs, perm=[1, 2, 0, 3])
 
@@ -99,8 +100,8 @@ class AttentionCharModel(attention_model.AttentionModel):
           conv_outputs = []
           filter_nums = (max_windows - min_windows + 1) * filters_per_windows
           for width in range(min_windows, max_windows + 1):
-              filter = tf.get_variable("filter_%d" % (width), shape=[num_units, width, 1, filters_per_windows])
-              strides = [1, num_units, 1, 1]
+              filter = tf.get_variable("filter_%d" % (width), shape=[embed_dim, width, 1, filters_per_windows])
+              strides = [1, embed_dim, 1, 1]
               # [batch, height = 1, width = max_time, channels = filters_per_windows]
               conv_out = tf.nn.relu(tf.nn.conv2d(conv_inputs, filter, strides, padding='SAME'))
               conv_outputs.append(conv_out)
@@ -160,35 +161,35 @@ class AttentionCharModel(attention_model.AttentionModel):
                   encoder_emb_inp = tf.concat([encoder_emb_inp,original_encoder_emb_inp],axis=-1)
               elif hparams.residual_cnn_layer_type == 'transform':
                   assert int(width_strides) == 1, 'transformed resudual_cnn_layer asks width_strides == 1'
-                  W_transform = tf.Variable(tf.truncated_normal([filter_nums, hparams.num_units], stddev=0.1), name="res_transform_w")
-                  b_transform = tf.Variable(tf.truncated_normal([hparams.num_units], stddev=0.1),name="res_transform_b")
+                  W_transform = tf.Variable(tf.truncated_normal([filter_nums, embed_dim], stddev=0.1), name="res_transform_w")
+                  b_transform = tf.Variable(tf.truncated_normal([embed_dim], stddev=0.1),name="res_transform_b")
                   encoder_emb_inp = tf.matmul(tf.reshape(encoder_emb_inp,[-1,filter_nums]), W_transform) + b_transform
-                  encoder_emb_inp = tf.reshape(encoder_emb_inp,[max_time,batch_size,num_units])
+                  encoder_emb_inp = tf.reshape(encoder_emb_inp,[max_time,batch_size,embed_dim])
                   encoder_emb_inp = encoder_emb_inp + original_encoder_emb_inp
               elif hparams.residual_cnn_layer_type == 'transformGate':
                   assert int(width_strides) == 1, 'transformed resudual_cnn_layer asks width_strides == 1'
-                  W_transform = tf.Variable(tf.truncated_normal([filter_nums, hparams.num_units], stddev=0.1), name="res_transform_w")
-                  b_transform = tf.Variable(tf.truncated_normal([hparams.num_units], stddev=0.1),name="res_transform_b")
+                  W_transform = tf.Variable(tf.truncated_normal([filter_nums, hparams.embed_dim], stddev=0.1), name="res_transform_w")
+                  b_transform = tf.Variable(tf.truncated_normal([hparams.embed_dim], stddev=0.1),name="res_transform_b")
                   #res [max_time*batch_size, num_units]
                   encoder_emb_inp = tf.matmul(tf.reshape(encoder_emb_inp,[-1,filter_nums]), W_transform) + b_transform
 
-                  gate_W = tf.Variable(tf.truncated_normal([hparams.num_units, hparams.num_units], stddev=0.1), name="gate_transform_b")
-                  gate_b = tf.Variable(tf.truncated_normal([hparams.num_units], stddev=0.1), name="gate_transform_b")
+                  gate_W = tf.Variable(tf.truncated_normal([hparams.embed_dim, hparams.embed_dim], stddev=0.1), name="gate_transform_b")
+                  gate_b = tf.Variable(tf.truncated_normal([hparams.embed_dim], stddev=0.1), name="gate_transform_b")
 
                   gate_val = tf.sigmoid(tf.matmul(encoder_emb_inp, gate_W) + gate_b)
                   encoder_emb_inp = tf.multiply(encoder_emb_inp, gate_val)
-                  original_encoder_emb_inp = tf.reshape(original_encoder_emb_inp,[-1,num_units])
+                  original_encoder_emb_inp = tf.reshape(original_encoder_emb_inp,[-1,embed_dim])
                   original_encoder_emb_inp = tf.multiply(original_encoder_emb_inp, 1.0 - gate_val)
-                  encoder_emb_inp = tf.reshape(encoder_emb_inp, [max_time, batch_size, num_units])
-                  original_encoder_emb_inp = tf.reshape(original_encoder_emb_inp, [max_time, batch_size, num_units])
+                  encoder_emb_inp = tf.reshape(encoder_emb_inp, [max_time, batch_size, embed_dim])
+                  original_encoder_emb_inp = tf.reshape(original_encoder_emb_inp, [max_time, batch_size, embed_dim])
                   encoder_emb_inp = encoder_emb_inp + original_encoder_emb_inp
               elif hparams.residual_cnn_layer_type == 'transformRe':
                   assert int(width_strides) == 1, 'transformed resudual_cnn_layer asks width_strides == 1'
-                  W_transform = tf.Variable(tf.truncated_normal([filter_nums, hparams.num_units], stddev=0.1),
+                  W_transform = tf.Variable(tf.truncated_normal([filter_nums, hparams.embed_dim], stddev=0.1),
                                             name="res_transform_w")
-                  b_transform = tf.Variable(tf.truncated_normal([hparams.num_units], stddev=0.1), name="res_transform_b")
+                  b_transform = tf.Variable(tf.truncated_normal([hparams.embed_dim], stddev=0.1), name="res_transform_b")
                   encoder_emb_inp = tf.nn.relu(tf.matmul(tf.reshape(encoder_emb_inp, [-1, filter_nums]), W_transform) + b_transform)
-                  encoder_emb_inp = tf.reshape(encoder_emb_inp, [max_time, batch_size, num_units])
+                  encoder_emb_inp = tf.reshape(encoder_emb_inp, [max_time, batch_size, embed_dim])
                   encoder_emb_inp = encoder_emb_inp + original_encoder_emb_inp
           # Encoder_outpus: [max_time, batch_size, num_units]
           if hparams.encoder_type == "uni":

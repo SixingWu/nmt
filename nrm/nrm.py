@@ -40,7 +40,18 @@ def add_arguments(parser):
   """Build ArgumentParser."""
   parser.register("type", "bool", lambda v: v.lower() == "true")
 
+  # training stop_windows
+  parser.add_argument("--debug", type="bool", nargs="?", const=True,
+                      default=True,
+                      help="Debug Mode")
+  # TODO 在eval当中不能为FAlse
 
+  parser.add_argument("--eval_test", type="bool", nargs="?", const=True,
+                      default=True,
+                      help="Whether to evaluate test set on external_process")
+  parser.add_argument("--stop_windows", type=int, default=3,
+                      help="windows size: if the average dev ppl of current window is larger than last window, training process will stop")
+  parser.add_argument("--stop_duration", type=int, default=1, help="stop_duration")
   # char-level
 
   parser.add_argument("--embedding_model", type=str, default="default", help="""\
@@ -169,9 +180,9 @@ def add_arguments(parser):
       Pretrained embedding prefix, expect files with src/tgt suffixes.
       The embedding files should be Glove formated txt files.\
       """)
-  parser.add_argument("--sos", type=str, default="<S>",
+  parser.add_argument("--sos", type=str, default="<s>",
                       help="Start-of-sentence symbol.")
-  parser.add_argument("--eos", type=str, default="</S>",
+  parser.add_argument("--eos", type=str, default="</s>",
                       help="End-of-sentence symbol.")
   parser.add_argument("--share_vocab", type="bool", nargs="?", const=True,
                       default=True,
@@ -232,9 +243,9 @@ def add_arguments(parser):
   parser.add_argument("--metrics", type=str, default="bleu,rouge,accuracy",
                       help=("Comma-separated list of evaluations "
                             "metrics (bleu,rouge,accuracy)"))
-  parser.add_argument("--steps_per_external_eval", type=int, default=10000,
+  parser.add_argument("--steps_per_external_eval", type=int, default=None,
                       help="""\
-      How many training steps to do per external evaluation.  Automatically set
+      How many training steps to do per external evaluation.  Automatically set(an epoch is down)
       based on data if None.\
       """)
   parser.add_argument("--scope", type=str, default=None,
@@ -296,6 +307,13 @@ def add_arguments(parser):
 def create_hparams(flags):
   """Create training hparams."""
   return tf.contrib.training.HParams(
+
+      # Early Stop
+      debug=flags.debug,
+      eval_test=flags.eval_test,
+      stop_windows=flags.stop_windows,
+      stop_duration=flags.stop_duration,
+      score_history=[-1],
       # Data
       src=flags.src,
       tgt=flags.tgt,

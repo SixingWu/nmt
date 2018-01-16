@@ -53,8 +53,8 @@ def run_sample_decode(infer_model, infer_sess, model_dir, hparams,
 
 
 def run_internal_eval(
-    eval_model, eval_sess, model_dir, hparams, summary_writer,
-    use_test_set=True):
+    eval_model, eval_sess, model_dir, hparams, summary_writer):
+  # TODO 加入提前终止的代码，比如加入externel的日志记录
   """Compute internal evaluation (perplexity) for both dev / test."""
   with eval_model.graph.as_default():
     loaded_eval_model, global_step = model_helper.create_or_load_model(
@@ -71,7 +71,7 @@ def run_internal_eval(
                            eval_model.iterator, dev_eval_iterator_feed_dict,
                            summary_writer, "dev")
   test_ppl = None
-  if use_test_set and hparams.test_prefix:
+  if hparams.eval_test  and hparams.test_prefix:
     test_src_file = "%s.%s" % (hparams.test_prefix, hparams.src)
     test_tgt_file = "%s.%s" % (hparams.test_prefix, hparams.tgt)
     test_eval_iterator_feed_dict = {
@@ -85,8 +85,10 @@ def run_internal_eval(
 
 
 def run_external_eval(infer_model, infer_sess, model_dir, hparams,
-                      summary_writer, save_best_dev=True, use_test_set=True):
+                      summary_writer, save_best_dev=True):
 
+
+  utils.print_out('running external evaluation')
   """Compute external evaluation (bleu, rouge, etc.) for both dev / test."""
   with infer_model.graph.as_default():
     loaded_infer_model, global_step = model_helper.create_or_load_model(
@@ -94,6 +96,7 @@ def run_external_eval(infer_model, infer_sess, model_dir, hparams,
 
   dev_src_file = "%s.%s" % (hparams.dev_prefix, hparams.src)
   dev_tgt_file = "%s.%s" % (hparams.dev_prefix, hparams.tgt)
+
   dev_infer_iterator_feed_dict = {
       infer_model.src_placeholder: inference.load_data(dev_src_file),
       infer_model.batch_size_placeholder: hparams.infer_batch_size,
@@ -111,7 +114,7 @@ def run_external_eval(infer_model, infer_sess, model_dir, hparams,
       save_on_best=save_best_dev)
 
   test_scores = None
-  if use_test_set and hparams.test_prefix:
+  if hparams.eval_test and hparams.test_prefix:
     test_src_file = "%s.%s" % (hparams.test_prefix, hparams.src)
     test_tgt_file = "%s.%s" % (hparams.test_prefix, hparams.tgt)
     test_infer_iterator_feed_dict = {
@@ -291,7 +294,22 @@ def train(hparams, scope=None, target_session=""):
       train_model.iterator.initializer,
       feed_dict={train_model.skip_count_placeholder: skip_count})
 
-  while global_step < num_train_steps:
+
+  # check the ppl windows
+  stop_windows = hparams.stop_windows
+  stop_duration = hparams.stop_duration
+  score_history = getattr(hparams, 'score_history')[1:]
+  if len(score_history) > stop_windows + stop_duration:
+      current_ppl = sum(score_history[-stop_windows:])
+      stop_flag = True
+      for i in range(1, stop_duration + 1):
+          last_ppl = sum(score_history[-stop_windows - i:-i])
+          if last_ppl - current_ppl > 0.001:
+              stop_flag = False
+      if stop_flag:
+          utils.print_out('model will not be trained anymore, because of the ppl of dev is increasing')
+  while stop_flag is False and global_step < num_train_steps:
+
     ### Run a step ###
     start_time = time.time()
     try:
@@ -346,6 +364,29 @@ def train(hparams, scope=None, target_session=""):
                         sample_tgt_data)
       dev_ppl, test_ppl = run_internal_eval(
           eval_model, eval_sess, model_dir, hparams, summary_writer)
+      utils.print_out('dev ppl:%.2f, test ppl: %.2f' % (dev_ppl, test_ppl))
+      # add previous scores to hparam
+      score_history = getattr(hparams, 'score_history')
+      score_history.append(dev_ppl)
+      setattr(hparams, 'score_history', score_history)
+      utils.save_hparams(out_dir, hparams)
+      if hparams.debug:
+        utils.print_out('windows_report: \n #####\n %s \n#####\n' % (str(score_history)))
+        ### check PPL windows to stop training
+        stop_windows = hparams.stop_windows
+        stop_duration = hparams.stop_duration
+        score_history = getattr(hparams, 'score_history')[1:]
+        if len(score_history) > stop_windows + stop_duration:
+            current_ppl = sum(score_history[-stop_windows:])
+            stop_flag = True
+            for i in range(1, stop_duration + 1):
+                last_ppl = sum(score_history[-stop_windows - i:-i])
+                if last_ppl - current_ppl > 0.001:
+                    stop_flag = False
+            if stop_flag:
+                utils.print_out('stop training due to the ppl on dev is increasing !')
+                break
+
 
     if global_step - last_external_eval_step >= steps_per_external_eval:
       last_external_eval_step = global_step
@@ -362,6 +403,7 @@ def train(hparams, scope=None, target_session=""):
           infer_model, infer_sess, model_dir,
           hparams, summary_writer)
 
+  utils.print_out('Model has been successfully stopped')
   # Done training
   loaded_train_model.saver.save(
       train_sess,
@@ -496,4 +538,6 @@ def _external_eval(model, global_step, sess, hparams, iterator,
                 getattr(hparams, "best_" + metric + "_dir"), "translate.ckpt"),
             global_step=model.global_step)
     utils.save_hparams(out_dir, hparams)
+
+
   return scores
