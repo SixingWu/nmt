@@ -275,12 +275,12 @@ def add_arguments(parser):
                       help=("""\
       Reference file to compute evaluation scores (if provided).\
       """))
-  parser.add_argument("--beam_width", type=int, default=0,
+  parser.add_argument("--beam_width", type=int, default=10,
                       help=("""\
       beam width when using beam search decoder. If 0 (default), use standard
       decoder with greedy helper.\
       """))
-  parser.add_argument("--infer_beam_width", type=int, default=0,
+  parser.add_argument("--infer_beam_width", type=int, default=10,
                       help=("""\
         beam width when using beam search decoder. If 0 (default), use standard
         decoder with greedy helper.\
