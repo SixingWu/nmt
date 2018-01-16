@@ -49,9 +49,12 @@ def add_arguments(parser):
   parser.add_argument("--eval_test", type="bool", nargs="?", const=True,
                       default=True,
                       help="Whether to evaluate test set on external_process")
-  parser.add_argument("--stop_windows", type=int, default=5,
+  parser.add_argument("--stop_windows", type=int, default=3,
                       help="windows size: if the average dev ppl of current window is larger than last window, training process will stop")
-  parser.add_argument("--stop_duration", type=int, default=3, help="stop_duration")
+  parser.add_argument("--min_steps", type=int, default=40000,
+                      help="windows size: if the average dev ppl of current window is larger than last window, training process will stop")
+
+  parser.add_argument("--stop_duration", type=int, default=2, help="stop_duration")
   # char-level
 
   parser.add_argument("--embedding_model", type=str, default="default", help="""\
@@ -314,6 +317,7 @@ def create_hparams(flags):
       stop_windows=flags.stop_windows,
       stop_duration=flags.stop_duration,
       score_history=[-1],
+      min_steps=flags.min_steps,
       # Data
       src=flags.src,
       tgt=flags.tgt,

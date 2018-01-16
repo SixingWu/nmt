@@ -300,12 +300,12 @@ def train(hparams, scope=None, target_session=""):
   stop_duration = hparams.stop_duration
   score_history = getattr(hparams, 'score_history')[1:]
   first_stop_flag = False
-  if len(score_history) > stop_windows + stop_duration:
+  if len(score_history) > stop_windows + stop_duration and global_step > hparams.min_steps:
       current_ppl = sum(score_history[-stop_windows:])
       first_stop_flag = True
       for i in range(1, stop_duration + 1):
           last_ppl = sum(score_history[-stop_windows - i:-i])
-          if last_ppl - current_ppl > 0.001:
+          if last_ppl - current_ppl > 0.005:
               first_stop_flag = False
       if first_stop_flag:
           utils.print_out('model will not be trained anymore, because of the ppl of dev is increasing')
@@ -377,12 +377,12 @@ def train(hparams, scope=None, target_session=""):
         stop_windows = hparams.stop_windows
         stop_duration = hparams.stop_duration
         score_history = getattr(hparams, 'score_history')[1:]
-        if len(score_history) > stop_windows + stop_duration:
+        if len(score_history) > stop_windows + stop_duration and global_step > hparams.min_steps:
             current_ppl = sum(score_history[-stop_windows:])
             stop_flag = True
             for i in range(1, stop_duration + 1):
                 last_ppl = sum(score_history[-stop_windows - i:-i])
-                if last_ppl - current_ppl > 0.001:
+                if last_ppl - current_ppl > 0.005:
                     stop_flag = False
             if stop_flag:
                 utils.print_out('stop training due to the ppl on dev is increasing !')
