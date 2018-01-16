@@ -299,6 +299,7 @@ def train(hparams, scope=None, target_session=""):
   stop_windows = hparams.stop_windows
   stop_duration = hparams.stop_duration
   score_history = getattr(hparams, 'score_history')[1:]
+  stop_flag = True
   if len(score_history) > stop_windows + stop_duration:
       current_ppl = sum(score_history[-stop_windows:])
       stop_flag = True
