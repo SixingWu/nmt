@@ -49,9 +49,9 @@ def add_arguments(parser):
   parser.add_argument("--eval_test", type="bool", nargs="?", const=True,
                       default=True,
                       help="Whether to evaluate test set on external_process")
-  parser.add_argument("--stop_windows", type=int, default=3,
+  parser.add_argument("--stop_windows", type=int, default=5,
                       help="windows size: if the average dev ppl of current window is larger than last window, training process will stop")
-  parser.add_argument("--stop_duration", type=int, default=1, help="stop_duration")
+  parser.add_argument("--stop_duration", type=int, default=3, help="stop_duration")
   # char-level
 
   parser.add_argument("--embedding_model", type=str, default="default", help="""\
@@ -71,7 +71,7 @@ def add_arguments(parser):
   parser.add_argument("--high_way_type", type=str, default='uniform', help="cnn min size.")
   # network
   parser.add_argument("--embed_dim", type=int, default=640, help="Embedding Vector Dimension")
-  parser.add_argument("--num_units", type=int, default=32, help="Network size.")
+  parser.add_argument("--num_units", type=int, default=128, help="Network size.")
   parser.add_argument("--num_layers", type=int, default=2,
                       help="Network depth.")
   parser.add_argument("--encoder_type", type=str, default="bi", help="""\
