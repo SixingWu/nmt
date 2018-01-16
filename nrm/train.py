@@ -299,17 +299,17 @@ def train(hparams, scope=None, target_session=""):
   stop_windows = hparams.stop_windows
   stop_duration = hparams.stop_duration
   score_history = getattr(hparams, 'score_history')[1:]
-  stop_flag = True
+  first_stop_flag = False
   if len(score_history) > stop_windows + stop_duration:
       current_ppl = sum(score_history[-stop_windows:])
-      stop_flag = True
+      first_stop_flag = True
       for i in range(1, stop_duration + 1):
           last_ppl = sum(score_history[-stop_windows - i:-i])
           if last_ppl - current_ppl > 0.001:
-              stop_flag = False
-      if stop_flag:
+              first_stop_flag = False
+      if first_stop_flag:
           utils.print_out('model will not be trained anymore, because of the ppl of dev is increasing')
-  while stop_flag is False and global_step < num_train_steps:
+  while first_stop_flag is False and global_step < num_train_steps:
 
     ### Run a step ###
     start_time = time.time()
