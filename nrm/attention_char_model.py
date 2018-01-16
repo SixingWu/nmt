@@ -205,8 +205,8 @@ class AttentionCharModel(attention_model.AttentionModel):
                   time_major=self.time_major,
                   swap_memory=True)
           elif hparams.encoder_type == "bi":
-              num_bi_layers = num_layers
-              num_bi_residual_layers = num_residual_layers
+              num_bi_layers = int(num_layers / 2)
+              num_bi_residual_layers = int(num_residual_layers / 2)
               utils.print_out("  num_bi_layers = %d, num_bi_residual_layers=%d" %
                               (num_bi_layers, num_bi_residual_layers))
 
