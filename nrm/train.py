@@ -200,8 +200,44 @@ def check_stats(stats, global_step, steps_per_stats, hparams, log_f):
     utils.print_out("  step %d overflow, stop early" % global_step, log_f)
     is_overflow = True
 
-  return is_overflow
+  return is_overflow, train_ppl
 
+
+def check_stop_status(hparams, global_step):
+    # check the ppl windows
+    train_stop_flag = getattr(hparams, 'train_stop_flag')
+    if train_stop_flag is False:
+        stop_windows = hparams.train_stop_windows
+        stop_duration = hparams.train_stop_duration
+        score_history = getattr(hparams, 'train_score_history')[1:]
+        if len(score_history) > stop_windows + stop_duration and global_step > hparams.min_steps:
+            current_ppl = sum(score_history[-stop_windows:])
+            stop_flag = True
+            for i in range(1, stop_duration + 1):
+                last_ppl = sum(score_history[-stop_windows - i:-i])
+                if last_ppl - current_ppl > 0.005:
+                    stop_flag = False
+            if stop_flag:
+                train_stop_flag = True
+                utils.print_out('train PPL is increasing, the train_stop_flag is set to True')
+                setattr(hparams, 'train_stop_flag', train_stop_flag)
+    dev_stop_flag = getattr(hparams, 'dev_stop_flag')
+    if dev_stop_flag is False:
+        stop_windows = hparams.dev_stop_windows
+        stop_duration = hparams.dev_stop_duration
+        score_history = getattr(hparams, 'dev_score_history')[1:]
+        if len(score_history) > stop_windows + stop_duration and global_step > hparams.min_steps:
+            current_ppl = sum(score_history[-stop_windows:])
+            stop_flag = True
+            for i in range(1, stop_duration + 1):
+                last_ppl = sum(score_history[-stop_windows - i:-i])
+                if last_ppl - current_ppl > 0.005:
+                    stop_flag = False
+            if stop_flag:
+                utils.print_out('dev PPL is increasing, the dev_stop_flag is set to True')
+                dev_stop_flag = True
+                setattr(hparams, 'dev_stop_flag', dev_stop_flag)
+    return dev_stop_flag and train_stop_flag
 
 def train(hparams, scope=None, target_session=""):
   """Train a translation model."""
@@ -295,21 +331,8 @@ def train(hparams, scope=None, target_session=""):
       feed_dict={train_model.skip_count_placeholder: skip_count})
 
 
-  # check the ppl windows
-  stop_windows = hparams.stop_windows
-  stop_duration = hparams.stop_duration
-  score_history = getattr(hparams, 'score_history')[1:]
-  first_stop_flag = False
-  if len(score_history) > stop_windows + stop_duration and global_step > hparams.min_steps:
-      current_ppl = sum(score_history[-stop_windows:])
-      first_stop_flag = True
-      for i in range(1, stop_duration + 1):
-          last_ppl = sum(score_history[-stop_windows - i:-i])
-          if last_ppl - current_ppl > 0.005:
-              first_stop_flag = False
-      if first_stop_flag:
-          utils.print_out('model will not be trained anymore, because of the ppl of dev is increasing')
-  while first_stop_flag is False and global_step < num_train_steps:
+
+  while (hparams.dev_stop_flag is False or hparams.train_stop_flag is False) and global_step < num_train_steps:
 
     ### Run a step ###
     start_time = time.time()
@@ -338,14 +361,19 @@ def train(hparams, scope=None, target_session=""):
 
     # Once in a while, we print statistics.
     if global_step - last_stats_step >= steps_per_stats:
-      last_stats_step = global_step
-      is_overflow = check_stats(stats, global_step, steps_per_stats, hparams,
+        last_stats_step = global_step
+        is_overflow, train_ppl = check_stats(stats, global_step, steps_per_stats, hparams,
                                 log_f)
-      if is_overflow:
-        break
+        if is_overflow:
+            break
 
-      # Reset statistics
-      stats = init_stats()
+        # add previous scores to hparam
+        score_history = getattr(hparams, 'train_score_history')
+        score_history.append(train_ppl)
+        setattr(hparams, 'train_score_history', score_history)
+
+        # Reset statistics
+        stats = init_stats()
 
     if global_step - last_eval_step >= steps_per_eval:
       last_eval_step = global_step
@@ -367,26 +395,15 @@ def train(hparams, scope=None, target_session=""):
           eval_model, eval_sess, model_dir, hparams, summary_writer)
       utils.print_out('dev ppl:%.2f, test ppl: %.2f' % (dev_ppl, test_ppl))
       # add previous scores to hparam
-      score_history = getattr(hparams, 'score_history')
+      score_history = getattr(hparams, 'dev_score_history')
       score_history.append(dev_ppl)
-      setattr(hparams, 'score_history', score_history)
+      setattr(hparams, 'dev_score_history', score_history)
       utils.save_hparams(out_dir, hparams)
       if hparams.debug:
-        utils.print_out('windows_report: \n #####\n %s \n#####\n' % (str(score_history)))
+        utils.print_out('last 100 Dev PPLs: \n #####\n %s \n#####\n' % (str(score_history[-100:])))
+        utils.print_out('last 100 Train PPLs: \n #####\n %s \n#####\n' % (str(getattr(hparams, 'train_score_history')[-100:])))
         ### check PPL windows to stop training
-        stop_windows = hparams.stop_windows
-        stop_duration = hparams.stop_duration
-        score_history = getattr(hparams, 'score_history')[1:]
-        if len(score_history) > stop_windows + stop_duration and global_step > hparams.min_steps:
-            current_ppl = sum(score_history[-stop_windows:])
-            stop_flag = True
-            for i in range(1, stop_duration + 1):
-                last_ppl = sum(score_history[-stop_windows - i:-i])
-                if last_ppl - current_ppl > 0.005:
-                    stop_flag = False
-            if stop_flag:
-                utils.print_out('stop training due to the ppl on dev is increasing !')
-                break
+      check_stop_status(hparams, global_step)
 
 
     if global_step - last_external_eval_step >= steps_per_external_eval:
