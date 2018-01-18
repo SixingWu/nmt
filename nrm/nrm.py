@@ -48,16 +48,6 @@ def add_arguments(parser):
   parser.add_argument("--eval_test", type="bool", nargs="?", const=True,
                       default=True,
                       help="Whether to evaluate test set on external_process")
-  parser.add_argument("--dev_stop_windows", type=int, default=3,
-                      help="windows size: if the average dev ppl of current window is larger than last window, training process")
-  parser.add_argument("--train_stop_windows", type=int, default=10,
-                      help="windows size: if the average dev ppl of current window is larger than last window, training process will stop")
-  parser.add_argument("--min_steps", type=int, default=40000,
-                      help="windows size: if the average dev ppl of current window is larger than last window, training process will stop")
-
-  parser.add_argument("--train_stop_duration", type=int, default=5, help="stop_duration")
-  parser.add_argument("--dev_stop_duration", type=int, default=2, help="stop_duration")
-  # char-level
 
   parser.add_argument("--embedding_model", type=str, default="default", help="""\
         rnn | cnn| bahdanau | normed_bahdanau or set to "" 
@@ -316,16 +306,9 @@ def create_hparams(flags):
       # Early Stop
       debug=flags.debug,
       eval_test=flags.eval_test,
-      dev_stop_windows=flags.dev_stop_windows,
-      dev_stop_duration=flags.dev_stop_duration,
-      train_stop_windows=flags.train_stop_windows,
-      train_stop_duration=flags.train_stop_duration,
       dev_score_history=[-1], # score on dev ppl
-      train_score_history = [-1], # score on train ppl
-      train_stop_flag = False,
       dev_stop_flag = False,
 
-      min_steps=flags.min_steps,
       # Data
       src=flags.src,
       tgt=flags.tgt,
