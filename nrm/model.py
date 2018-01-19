@@ -61,7 +61,7 @@ class BaseModel(object):
       extra_args: model_helper.ExtraArgs, for passing customizable functions.
 
     """
-    assert isinstance(iterator, iterator_utils.BatchedInput)
+    assert isinstance(iterator, iterator_utils.BatchedInput) or isinstance(iterator, iterator_utils.SegBatchedInput)
     self.iterator = iterator
     self.mode = mode
     self.src_vocab_table = source_vocab_table
@@ -543,21 +543,26 @@ class Model(BaseModel):
   def _build_encoder(self, hparams):
     """Build an encoder."""
     utils.print_out("utilizing the basic model to build encoder")
-
+    #TODO 增加对输入Embedding的处理方法 [1] raw_embedding, [2] cnn_per_word_embedding
     num_layers = hparams.num_layers
     num_residual_layers = hparams.num_residual_layers
 
     iterator = self.iterator
-
     source = iterator.source
     if self.time_major:
       source = tf.transpose(source)
 
     with tf.variable_scope("encoder") as scope:
       dtype = scope.dtype
-      # Look up embedding, emp_inp: [max_time, batch_size, num_units]
-      encoder_emb_inp = tf.nn.embedding_lookup(
-          self.embedding_encoder, source)
+
+      if hparams.src_embed_type == 'raw':
+          # Look up embedding, emp_inp: [max_time, batch_size, num_units]
+          encoder_emb_inp = tf.nn.embedding_lookup(
+              self.embedding_encoder, source)
+      elif hparams.src_embed_type == 'cnn_segment':
+          # Look up embedding, emp_inp: [max_time, batch_size, num_units]
+          encoder_emb_inp = tf.nn.embedding_lookup(
+              self.embedding_encoder, source)
 
       # Encoder_outpus: [max_time, batch_size, num_units]
       if hparams.encoder_type == "uni":

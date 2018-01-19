@@ -66,23 +66,38 @@ class TrainModel(
   pass
 
 
+
+# Create a runnable model
 def create_train_model(
     model_creator, hparams, scope=None, num_workers=1, jobid=0,
     extra_args=None):
   """Create train graph, model, and iterator."""
+  utils.print_out('Loading corpus from %s.(%s/%s)' % (hparams.train_prefix, hparams.src, hparams.tgt))
   src_file = "%s.%s" % (hparams.train_prefix, hparams.src)
   tgt_file = "%s.%s" % (hparams.train_prefix, hparams.tgt)
+
   src_vocab_file = hparams.src_vocab_file
   tgt_vocab_file = hparams.tgt_vocab_file
-
   graph = tf.Graph()
 
   with graph.as_default(), tf.container(scope or "train"):
+    utils.print_out('utilize the original vocab')
     src_vocab_table, tgt_vocab_table = vocab_utils.create_vocab_tables(
         src_vocab_file, tgt_vocab_file, hparams.share_vocab)
 
     src_dataset = tf.data.TextLineDataset(src_file)
     tgt_dataset = tf.data.TextLineDataset(tgt_file)
+    if 'segment' in hparams.src_embed_type:
+        utils.print_out('Data_Util will load the segment information')
+        seg_src_file = "%s.%s_seg" % (hparams.train_prefix, hparams.src)
+        seg_tgt_file = "%s.%s_seg" % (hparams.train_prefix, hparams.tgt)
+        seg_src_dataset = tf.data.TextLineDataset(seg_src_file)
+        seg_tgt_dataset = tf.data.TextLineDataset(seg_tgt_file)
+        seg_len = hparams.seg_len
+    else:
+        seg_src_dataset = None
+        seg_tgt_dataset = None
+        seg_len = None
     skip_count_placeholder = tf.placeholder(shape=(), dtype=tf.int64)
 
     iterator = iterator_utils.get_iterator(
@@ -90,6 +105,11 @@ def create_train_model(
         tgt_dataset,
         src_vocab_table,
         tgt_vocab_table,
+        seg_src_dataset=seg_src_dataset,
+        seg_tgt_dataset=seg_tgt_dataset,
+        seg_len=seg_len,
+        seg_separator=hparams.seg_separator,
+        seg_inter_separator = hparams.seg_inter_separator,
         batch_size=hparams.batch_size,
         sos=hparams.sos,
         eos=hparams.eos,

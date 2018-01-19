@@ -407,6 +407,16 @@ def train(hparams, scope=None, target_session=""):
       dev_scores, test_scores, _ = run_external_eval(
           infer_model, infer_sess, model_dir,
           hparams, summary_writer)
+      # add previous scores to hparam
+      dev_ppl, test_ppl = run_internal_eval(
+          eval_model, eval_sess, model_dir, hparams, summary_writer)
+      score_history = getattr(hparams, 'dev_score_history')
+      score_history.append(dev_ppl)
+      setattr(hparams, 'dev_score_history', score_history)
+      utils.save_hparams(out_dir, hparams)
+      if hparams.debug:
+          utils.print_out('Epoch Dev PPLs: \n #####\n %s \n#####\n' % (str(score_history[-100:])))
+      check_stop_status(hparams, global_step)
 
   utils.print_out('Model has been successfully stopped')
   # Done training

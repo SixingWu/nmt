@@ -65,6 +65,9 @@ def add_arguments(parser):
   parser.add_argument("--residual_cnn_layer_type", type=str, default='concat', help="cnn min size.")
   parser.add_argument("--high_way_type", type=str, default='uniform', help="cnn min size.")
   # network
+  parser.add_argument("--src_embed_type", type=str, default="raw", help="""\
+        raw | seg_cnn\
+        """)
   parser.add_argument("--embed_dim", type=int, default=640, help="Embedding Vector Dimension")
   parser.add_argument("--num_units", type=int, default=128, help="Network size.")
   parser.add_argument("--num_layers", type=int, default=2,
@@ -238,7 +241,7 @@ def add_arguments(parser):
   parser.add_argument("--metrics", type=str, default="bleu,rouge,accuracy",
                       help=("Comma-separated list of evaluations "
                             "metrics (bleu,rouge,accuracy)"))
-  parser.add_argument("--steps_per_external_eval", type=int, default=None,
+  parser.add_argument("--steps_per_external_eval", type=int, default=10000,
                       help="""\
       How many training steps to do per external evaluation.  Automatically set(an epoch is down)
       based on data if None.\
@@ -303,6 +306,12 @@ def create_hparams(flags):
   """Create training hparams."""
   return tf.contrib.training.HParams(
 
+
+      # seg embedding
+      seg_len=8,
+      seg_separator='\t',
+      seg_inter_separator = ' ',
+
       # Early Stop
       debug=flags.debug,
       eval_test=flags.eval_test,
@@ -330,6 +339,7 @@ def create_hparams(flags):
       high_way_type=flags.high_way_type,
 
       # Networks
+      src_embed_type=flags.src_embed_type,
       embed_dim=flags.embed_dim,
       num_units=flags.num_units,
       num_layers=flags.num_layers,
@@ -548,6 +558,8 @@ def run_main(flags, default_hparams, train_fn, inference_fn, target_session=""):
   # Job
   jobid = flags.jobid
   num_workers = flags.num_workers
+
+
   utils.print_out("# Job id %d" % jobid)
 
   # Random
