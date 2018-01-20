@@ -91,12 +91,19 @@ def create_train_model(
         utils.print_out('Data_Util will load the segment information')
         seg_src_file = "%s.%s_seg" % (hparams.train_prefix, hparams.src)
         seg_tgt_file = "%s.%s_seg" % (hparams.train_prefix, hparams.tgt)
+        seg_len_src_file = "%s.%s_seg_len" % (hparams.train_prefix, hparams.src)
+        seg_len_tgt_file = "%s.%s_seg_len" % (hparams.train_prefix, hparams.tgt)
         seg_src_dataset = tf.data.TextLineDataset(seg_src_file)
         seg_tgt_dataset = tf.data.TextLineDataset(seg_tgt_file)
+        seg_len_src_dataset = tf.data.TextLineDataset(seg_len_src_file)
+        seg_len_tgt_dataset = tf.data.TextLineDataset(seg_len_tgt_file)
         seg_len = hparams.seg_len
     else:
         seg_src_dataset = None
         seg_tgt_dataset = None
+        seg_len_src_dataset = None
+        seg_len_tgt_dataset = None
+
         seg_len = None
     skip_count_placeholder = tf.placeholder(shape=(), dtype=tf.int64)
 
@@ -105,6 +112,8 @@ def create_train_model(
         tgt_dataset,
         src_vocab_table,
         tgt_vocab_table,
+        seg_len_src_dataset=seg_len_src_dataset,
+        seg_len_tgt_dataset=seg_len_tgt_dataset,
         seg_src_dataset=seg_src_dataset,
         seg_tgt_dataset=seg_tgt_dataset,
         seg_len=seg_len,

@@ -36,7 +36,7 @@ class SegBatchedInput(
                                ("initializer", "source", "target_input",
                                 "target_output", "source_sequence_length",
                                 "target_sequence_length","seg_source", "seg_target_input",
-                                "seg_target_output",))):
+                                "seg_target_output","seg_src_lens","seg_tgt_lens",))):
   pass
 
 
@@ -95,6 +95,8 @@ def get_iterator(src_dataset,
                  num_buckets,
                  seg_src_dataset=None,
                  seg_tgt_dataset=None,
+                 seg_len_src_dataset=None,
+                 seg_len_tgt_dataset=None,
                  seg_len=None,
                  seg_inter_separator=None,
                  seg_separator=None,
@@ -112,7 +114,7 @@ def get_iterator(src_dataset,
   tgt_eos_id = tf.cast(tgt_vocab_table.lookup(tf.constant(eos)), tf.int32)
 
   if seg_src_dataset is not None:
-      src_tgt_dataset = tf.data.Dataset.zip((src_dataset, tgt_dataset, seg_tgt_dataset, seg_src_dataset))
+      src_tgt_dataset = tf.data.Dataset.zip((src_dataset, tgt_dataset, seg_src_dataset, seg_tgt_dataset, seg_len_src_dataset, seg_len_tgt_dataset))
 
       src_tgt_dataset = src_tgt_dataset.shard(num_shards, shard_index)
       if skip_count is not None:
@@ -122,21 +124,21 @@ def get_iterator(src_dataset,
 
       # First To chars
       src_tgt_dataset = src_tgt_dataset.map(
-          lambda src, tgt, seg_src,seg_tgt: (
-              tf.string_split([src]).values, tf.string_split([tgt]).values, tf.string_split([seg_src],seg_separator).values, tf.string_split([seg_tgt],seg_separator).values),
+          lambda src, tgt, seg_src,seg_tgt, len_src, len_tgt: (
+              tf.string_split([src]).values, tf.string_split([tgt]).values, tf.string_split([seg_src],seg_separator).values, tf.string_split([seg_tgt],seg_separator).values,tf.string_split([len_src]).values, tf.string_split([len_tgt]).values),
           num_parallel_calls=num_parallel_calls).prefetch(output_buffer_size)
 
       # Filter zero length input sequences.
       src_tgt_dataset = src_tgt_dataset.filter(
-          lambda src, tgt, seg_src, seg_tgt: tf.logical_and(tf.size(src) > 0, tf.size(tgt) > 0))
+          lambda src, tgt, seg_src, seg_tgt, len_src, len_tgt: tf.logical_and(tf.size(src) > 0, tf.size(tgt) > 0))
 
       if src_max_len:
           src_tgt_dataset = src_tgt_dataset.map(
-              lambda src, tgt, seg_src, seg_tgt: (src[:src_max_len], tgt,seg_src[:src_max_len],seg_tgt),
+              lambda src, tgt, seg_src, seg_tgt, len_src, len_tgt: (src[:src_max_len], tgt,seg_src[:src_max_len],seg_tgt, len_src, len_src, len_tgt, len_tgt),
               num_parallel_calls=num_parallel_calls).prefetch(output_buffer_size)
       if tgt_max_len:
           src_tgt_dataset = src_tgt_dataset.map(
-              lambda src, tgt, seg_src, seg_tgt: (src, tgt[:tgt_max_len], seg_src, seg_tgt[:tgt_max_len]),
+              lambda src, tgt, seg_src, seg_tgt, len_src, len_tgt: (src, tgt[:tgt_max_len], seg_src, seg_tgt[:tgt_max_len], len_src, len_tgt[:tgt_max_len]),
               num_parallel_calls=num_parallel_calls).prefetch(output_buffer_size)
 
       # Convert the seg_word to seg_chars
@@ -145,31 +147,36 @@ def get_iterator(src_dataset,
           new_src = tf.reshape(new_src, [-1, seg_len])
           return new_src
 
-      src_tgt_dataset = src_tgt_dataset.map(lambda src, tgt, seg_src, seg_tgt: (src, tgt, my_func(seg_src), my_func(seg_tgt)),
+      src_tgt_dataset = src_tgt_dataset.map(lambda src, tgt, seg_src, seg_tgt, len_src, len_tgt: (src, tgt, my_func(seg_src), my_func(seg_tgt), len_src, len_tgt),
               num_parallel_calls=num_parallel_calls).prefetch(output_buffer_size)
 
       # Convert the word strings to ids.  Word strings that are not in the
       # vocab get the lookup table's default_value integer.
       src_tgt_dataset = src_tgt_dataset.map(
-          lambda src, tgt, seg_src, seg_tgt : (tf.cast(src_vocab_table.lookup(src), tf.int32),
+          lambda src, tgt, seg_src, seg_tgt, len_src, len_tgt : (tf.cast(src_vocab_table.lookup(src), tf.int32),
                                                tf.cast(tgt_vocab_table.lookup(tgt), tf.int32),
                                                tf.cast(tgt_vocab_table.lookup(seg_src), tf.int32),
-                                               tf.cast(tgt_vocab_table.lookup(seg_tgt), tf.int32)),
+                                               tf.cast(tgt_vocab_table.lookup(seg_tgt), tf.int32),
+                                               tf.cast(len_src, tf.int32),
+                                               tf.cast(len_tgt, tf.int32)),
           num_parallel_calls=num_parallel_calls).prefetch(output_buffer_size)
       # Create a tgt_input prefixed with <sos> and a tgt_output suffixed with <eos>.
       src_tgt_dataset = src_tgt_dataset.map(
-          lambda src, tgt, seg_src, seg_tgt: (src,
+          lambda src, tgt, seg_src, seg_tgt, len_src, len_tgt: (src,
                             tf.concat(([tgt_sos_id], tgt), 0),
                             tf.concat((tgt, [tgt_eos_id]), 0),
                             seg_src,
                             # TODO 这里的开始结束符号是否需要修改
                             tf.concat(([[tgt_sos_id] * seg_len], seg_tgt), 0),
-                            tf.concat((seg_tgt, [[tgt_eos_id] * seg_len]), 0)),
+                            tf.concat((seg_tgt, [[tgt_eos_id] * seg_len]), 0),
+                            tf.concat(([0], len_src), 0),
+                            tf.concat((len_tgt, [0]), 0),
+                                                                ),
           num_parallel_calls=num_parallel_calls).prefetch(output_buffer_size)
       # Add in sequence lengths.
       src_tgt_dataset = src_tgt_dataset.map(
-          lambda src, tgt_in, tgt_out, seg_src, seg_tgt_in, seg_tgt_out: (
-              src, tgt_in, tgt_out, tf.size(src), tf.size(tgt_in), seg_src, seg_tgt_in, seg_tgt_out),
+          lambda src, tgt_in, tgt_out, seg_src, seg_tgt_in, seg_tgt_out, len_src,len_tgt: (
+              src, tgt_in, tgt_out, tf.size(src), tf.size(tgt_in), seg_src, seg_tgt_in, seg_tgt_out,len_src,len_tgt),
           num_parallel_calls=num_parallel_calls).prefetch(output_buffer_size)
 
       # Bucket by source sequence length (buckets for lengths 0-9, 10-19, ...)
@@ -187,7 +194,10 @@ def get_iterator(src_dataset,
                   tf.TensorShape([]),  # tgt_len
                   tf.TensorShape([None, seg_len] ),  # seg_src
                   tf.TensorShape([None, seg_len] ),  # seg_tgt_input
-                  tf.TensorShape([None, seg_len] )) , # seg_tgt_output
+                  tf.TensorShape([None, seg_len] ),
+                  tf.TensorShape([]),  # seg_src_len
+                  tf.TensorShape([]),  # seg_tgt_len
+              ) , # seg_tgt_output
               # Pad the source and target sequences with eos tokens.
               # (Though notice we don't generally need to do this since
               # later on we will be masking out calculations past the true sequence.
@@ -200,6 +210,8 @@ def get_iterator(src_dataset,
                   src_eos_id,  # seg_src
                   tgt_eos_id,  # seg_tgt_input
                   tgt_eos_id,  # seg_tgt_output
+                  0,
+                  0,
               ))  # tgt_len -- unused
   else:
       src_tgt_dataset = tf.data.Dataset.zip((src_dataset, tgt_dataset))
@@ -285,7 +297,7 @@ def get_iterator(src_dataset,
       bucket_id = tf.maximum(src_len // bucket_width, tgt_len // bucket_width)
       return tf.to_int64(tf.minimum(num_buckets, bucket_id))
 
-    def seg_key_func(unused_1, unused_2, unused_3, src_len, tgt_len,unused_4, unused_5, unused_6 ):
+    def seg_key_func(unused_1, unused_2, unused_3, src_len, tgt_len,unused_4, unused_5, unused_6, seg_src_len, seg_tgt_len):
       # Calculate bucket_width by maximum source sequence length.
       # Pairs with length [0, bucket_width) go to bucket 0, length
       # [bucket_width, 2 * bucket_width) go to bucket 1, etc.  Pairs with length
@@ -329,7 +341,7 @@ def get_iterator(src_dataset,
   else:
       batched_iter = batched_dataset.make_initializable_iterator()
       (src_ids, tgt_input_ids, tgt_output_ids, src_seq_len,
-       tgt_seq_len,seg_src_ids, seg_tgt_input_ids, seg_tgt_output_ids,) = (batched_iter.get_next())
+       tgt_seq_len,seg_src_ids, seg_tgt_input_ids, seg_tgt_output_ids,seg_src_lens,seg_tgt_lens) = (batched_iter.get_next())
       return SegBatchedInput(
           initializer=batched_iter.initializer,
           source=src_ids,
@@ -340,4 +352,6 @@ def get_iterator(src_dataset,
           seg_source=seg_src_ids,
           seg_target_input=seg_tgt_input_ids,
           seg_target_output=seg_tgt_output_ids,
+          seg_src_lens=seg_src_lens,
+          seg_tgt_lens=seg_tgt_lens,
       )
