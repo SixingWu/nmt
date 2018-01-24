@@ -560,6 +560,7 @@ class Model(BaseModel):
           encoder_emb_inp = tf.nn.embedding_lookup(
               self.embedding_encoder, source)
       elif hparams.src_embed_type == 'cnn_segment':
+          seg_source = iterator.seg_source
           # Look up embedding, emp_inp: [max_time, batch_size, num_units]
           encoder_emb_inp = tf.nn.embedding_lookup(
               self.embedding_encoder, source)

@@ -134,7 +134,7 @@ def get_iterator(src_dataset,
 
       if src_max_len:
           src_tgt_dataset = src_tgt_dataset.map(
-              lambda src, tgt, seg_src, seg_tgt, len_src, len_tgt: (src[:src_max_len], tgt,seg_src[:src_max_len],seg_tgt, len_src, len_src, len_tgt, len_tgt),
+              lambda src, tgt, seg_src, seg_tgt, len_src, len_tgt: (src[:src_max_len], tgt,seg_src[:src_max_len],seg_tgt, len_src[:src_max_len], len_tgt),
               num_parallel_calls=num_parallel_calls).prefetch(output_buffer_size)
       if tgt_max_len:
           src_tgt_dataset = src_tgt_dataset.map(
@@ -157,8 +157,8 @@ def get_iterator(src_dataset,
                                                tf.cast(tgt_vocab_table.lookup(tgt), tf.int32),
                                                tf.cast(tgt_vocab_table.lookup(seg_src), tf.int32),
                                                tf.cast(tgt_vocab_table.lookup(seg_tgt), tf.int32),
-                                               tf.cast(len_src, tf.int32),
-                                               tf.cast(len_tgt, tf.int32)),
+                                               tf.string_to_number(len_src, out_type=tf.int32),
+                                               tf.string_to_number(len_tgt, out_type=tf.int32)),
           num_parallel_calls=num_parallel_calls).prefetch(output_buffer_size)
       # Create a tgt_input prefixed with <sos> and a tgt_output suffixed with <eos>.
       src_tgt_dataset = src_tgt_dataset.map(
@@ -195,8 +195,8 @@ def get_iterator(src_dataset,
                   tf.TensorShape([None, seg_len] ),  # seg_src
                   tf.TensorShape([None, seg_len] ),  # seg_tgt_input
                   tf.TensorShape([None, seg_len] ),
-                  tf.TensorShape([]),  # seg_src_len
-                  tf.TensorShape([]),  # seg_tgt_len
+                  tf.TensorShape([None]),  # seg_src_len
+                  tf.TensorShape([None]),  # seg_tgt_len
               ) , # seg_tgt_output
               # Pad the source and target sequences with eos tokens.
               # (Though notice we don't generally need to do this since
