@@ -229,6 +229,7 @@ class AttentionCharModel(attention_model.AttentionModel):
                       encoder_state.append(bi_encoder_state[0][layer_id])  # forward
                       encoder_state.append(bi_encoder_state[1][layer_id])  # backward
                   encoder_state = tuple(encoder_state)
+
           else:
               raise ValueError("Unknown encoder_type %s" % hparams.encoder_type)
       return encoder_outputs, encoder_state

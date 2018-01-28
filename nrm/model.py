@@ -603,6 +603,9 @@ class Model(BaseModel):
             encoder_state.append(bi_encoder_state[0][layer_id])  # forward
             encoder_state.append(bi_encoder_state[1][layer_id])  # backward
           encoder_state = tuple(encoder_state)
+      elif hparams.encoder_type == 'direct':
+          encoder_outputs = encoder_emb_inp
+          encoder_state = tuple(tf.reshape(encoder_emb_inp[-1::],[-1,hparams.embed_dim]))
       else:
         raise ValueError("Unknown encoder_type %s" % hparams.encoder_type)
     return encoder_outputs, encoder_state
