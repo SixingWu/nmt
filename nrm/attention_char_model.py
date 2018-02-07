@@ -117,7 +117,7 @@ class AttentionCharModel(attention_model.AttentionModel):
               pool_out = tf.reshape(pool_out, [batch_size, segment_len, filters_per_windows])
               pool_outputs.append(pool_out)
 
-          def highway(x, size, activation, carry_bias=-1.0, name = 'highway'):
+          def highway(x, size, activation, carry_bias=-1.0, name='highway'):
               with tf.variable_scope(name):
                   W_T = tf.Variable(tf.truncated_normal([size, size], stddev=0.1), name="weight_transform")
                   b_T = tf.Variable(tf.constant(carry_bias, shape=[size]), name="bias_transform")
