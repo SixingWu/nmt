@@ -178,7 +178,7 @@ class AttentionCharModel(attention_model.AttentionModel):
 
                   gate_val = tf.sigmoid(tf.matmul(encoder_emb_inp, gate_W) + gate_b)
                   encoder_emb_inp = tf.multiply(encoder_emb_inp, gate_val)
-                  original_encoder_emb_inp = tf.reshape(original_encoder_emb_inp,[-1,embed_dim])
+                  original_encoder_emb_inp = tf.reshape(original_encoder_emb_inp,[-1, embed_dim])
                   original_encoder_emb_inp = tf.multiply(original_encoder_emb_inp, 1.0 - gate_val)
                   encoder_emb_inp = tf.reshape(encoder_emb_inp, [max_time, batch_size, embed_dim])
                   original_encoder_emb_inp = tf.reshape(original_encoder_emb_inp, [max_time, batch_size, embed_dim])
