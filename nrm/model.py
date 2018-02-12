@@ -21,6 +21,7 @@ from __future__ import print_function
 import abc
 import numpy as np
 
+
 import tensorflow as tf
 
 from tensorflow.python.layers import core as layers_core
