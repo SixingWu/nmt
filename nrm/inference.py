@@ -77,8 +77,10 @@ def load_data(inference_input_file, hparams=None):
 
   if hparams and hparams.inference_indices:
     inference_data = [inference_data[i] for i in hparams.inference_indices]
-
   return inference_data
+
+def load_seg_data(inference_input_file, hparams=None):
+    """Load inference data."""
 
 
 def inference(ckpt,

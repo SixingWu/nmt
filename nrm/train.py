@@ -40,15 +40,18 @@ __all__ = [
 
 
 def run_sample_decode(infer_model, infer_sess, model_dir, hparams,
-                      summary_writer, src_data, tgt_data):
+                      summary_writer, src_data, seg_src_data, seg_len_src_data, tgt_data):
   """Sample decode a random sentence from src_data."""
   with infer_model.graph.as_default():
     loaded_infer_model, global_step = model_helper.create_or_load_model(
         infer_model.model, model_dir, infer_sess, "infer")
 
   _sample_decode(loaded_infer_model, global_step, infer_sess, hparams,
-                 infer_model.iterator, src_data, tgt_data,
+                 infer_model.iterator, src_data, seg_src_data,
+                 seg_len_src_data, tgt_data,
                  infer_model.src_placeholder,
+                 infer_model.seg_src_placeholder,
+                 infer_model.seg_len_src_placeholder,
                  infer_model.batch_size_placeholder, summary_writer)
 
 
@@ -61,11 +64,29 @@ def run_internal_eval(
         eval_model.model, model_dir, eval_sess, "eval")
 
   dev_src_file = "%s.%s" % (hparams.dev_prefix, hparams.src)
+  dev_seg_src_file = "%s.%s_seg" % (hparams.dev_prefix, hparams.src)
+  dev_seg_len_src_file = "%s.%s_seg_len" % (hparams.dev_prefix, hparams.src)
   dev_tgt_file = "%s.%s" % (hparams.dev_prefix, hparams.tgt)
-  dev_eval_iterator_feed_dict = {
-      eval_model.src_file_placeholder: dev_src_file,
-      eval_model.tgt_file_placeholder: dev_tgt_file
-  }
+  dev_seg_tgt_file = "%s.%s_seg" % (hparams.dev_prefix, hparams.tgt)
+  dev_seg_len_tgt_file = "%s.%s_seg_len" % (hparams.dev_prefix, hparams.tgt)
+
+  if 'segment' in hparams.src_embed_type:
+      dev_eval_iterator_feed_dict = {
+          eval_model.src_file_placeholder: dev_src_file,
+          eval_model.seg_src_file_placeholder: dev_seg_src_file,
+          eval_model.seg_len_src_file_placeholder: dev_seg_len_src_file,
+          eval_model.tgt_file_placeholder: dev_tgt_file,
+          eval_model.seg_tgt_file_placeholder: dev_seg_tgt_file,
+          eval_model.seg_len_tgt_file_placeholder: dev_seg_len_tgt_file,
+
+      }
+  else:
+      dev_eval_iterator_feed_dict = {
+          eval_model.src_file_placeholder: dev_src_file,
+          eval_model.tgt_file_placeholder: dev_tgt_file,
+
+
+      }
 
   dev_ppl = _internal_eval(loaded_eval_model, global_step, eval_sess,
                            eval_model.iterator, dev_eval_iterator_feed_dict,
@@ -73,11 +94,25 @@ def run_internal_eval(
   test_ppl = None
   if hparams.eval_test  and hparams.test_prefix:
     test_src_file = "%s.%s" % (hparams.test_prefix, hparams.src)
+    test_seg_src_file = "%s.%s_seg" % (hparams.test_prefix, hparams.src)
+    test_seg_len_src_file = "%s.%s_seg_len" % (hparams.test_prefix, hparams.src)
     test_tgt_file = "%s.%s" % (hparams.test_prefix, hparams.tgt)
-    test_eval_iterator_feed_dict = {
-        eval_model.src_file_placeholder: test_src_file,
-        eval_model.tgt_file_placeholder: test_tgt_file
-    }
+    test_seg_tgt_file = "%s.%s_seg" % (hparams.test_prefix, hparams.tgt)
+    test_seg_len_tgt_file = "%s.%s_seg_len" % (hparams.test_prefix, hparams.tgt)
+    if 'segment' in hparams.src_embed_type:
+        test_eval_iterator_feed_dict = {
+            eval_model.src_file_placeholder: test_src_file,
+            eval_model.seg_src_file_placeholder: test_seg_src_file,
+            eval_model.seg_len_src_file_placeholder: test_seg_len_src_file,
+            eval_model.tgt_file_placeholder: test_tgt_file,
+            eval_model.seg_tgt_file_placeholder: test_seg_tgt_file,
+            eval_model.seg_len_tgt_file_placeholder: test_seg_len_tgt_file
+        }
+    else:
+        test_eval_iterator_feed_dict = {
+            eval_model.src_file_placeholder: test_src_file,
+            eval_model.tgt_file_placeholder: test_tgt_file,
+        }
     test_ppl = _internal_eval(loaded_eval_model, global_step, eval_sess,
                               eval_model.iterator, test_eval_iterator_feed_dict,
                               summary_writer, "test")
@@ -95,10 +130,15 @@ def run_external_eval(infer_model, infer_sess, model_dir, hparams,
         infer_model.model, model_dir, infer_sess, "infer")
 
   dev_src_file = "%s.%s" % (hparams.dev_prefix, hparams.src)
+  dev_seg_src_file = "%s.%s_seg" % (hparams.dev_prefix, hparams.src)
+  dev_seg_len_src_file = "%s.%s_seg_len" % (hparams.dev_prefix, hparams.src)
+
   dev_tgt_file = "%s.%s" % (hparams.dev_prefix, hparams.tgt)
 
   dev_infer_iterator_feed_dict = {
       infer_model.src_placeholder: inference.load_data(dev_src_file),
+      infer_model.seg_src_placeholder: inference.load_data(dev_seg_src_file),
+      infer_model.seg_len_src_placeholder: inference.load_data(dev_seg_len_src_file),
       infer_model.batch_size_placeholder: hparams.infer_batch_size,
   }
   dev_scores = _external_eval(
@@ -116,9 +156,13 @@ def run_external_eval(infer_model, infer_sess, model_dir, hparams,
   test_scores = None
   if hparams.eval_test and hparams.test_prefix:
     test_src_file = "%s.%s" % (hparams.test_prefix, hparams.src)
+    test_seg_src_file = "%s.%s_seg" % (hparams.test_prefix, hparams.src)
+    test_seg_len_src_file = "%s.%s_seg_len" % (hparams.test_prefix, hparams.src)
     test_tgt_file = "%s.%s" % (hparams.test_prefix, hparams.tgt)
     test_infer_iterator_feed_dict = {
         infer_model.src_placeholder: inference.load_data(test_src_file),
+        infer_model.seg_src_placeholder: inference.load_data(test_seg_src_file),
+        infer_model.seg_len_src_placeholder: inference.load_data(test_seg_len_src_file),
         infer_model.batch_size_placeholder: hparams.infer_batch_size,
     }
     test_scores = _external_eval(
@@ -136,10 +180,10 @@ def run_external_eval(infer_model, infer_sess, model_dir, hparams,
 
 
 def run_full_eval(model_dir, infer_model, infer_sess, eval_model, eval_sess,
-                  hparams, summary_writer, sample_src_data, sample_tgt_data):
+                  hparams, summary_writer, sample_src_data, sample_seg_src_data, sample_seg_len_src_data,sample_tgt_data):
   """Wrapper for running sample_decode, internal_eval and external_eval."""
   run_sample_decode(infer_model, infer_sess, model_dir, hparams, summary_writer,
-                    sample_src_data, sample_tgt_data)
+                    sample_src_data,sample_seg_src_data, sample_seg_len_src_data, sample_tgt_data)
   dev_ppl, test_ppl = run_internal_eval(
       eval_model, eval_sess, model_dir, hparams, summary_writer)
   dev_scores, test_scores, global_step = run_external_eval(
@@ -242,8 +286,12 @@ def train(hparams, scope=None, target_session=""):
 
   # Preload data for sample decoding.
   dev_src_file = "%s.%s" % (hparams.dev_prefix, hparams.src)
+  dev_seg_src_file = "%s.%s_seg" % (hparams.dev_prefix, hparams.src)
+  dev_seg_len_src_file = "%s.%s_seg_len" % (hparams.dev_prefix, hparams.src)
   dev_tgt_file = "%s.%s" % (hparams.dev_prefix, hparams.tgt)
   sample_src_data = inference.load_data(dev_src_file)
+  sample_seg_src_data = inference.load_data(dev_seg_src_file)
+  sample_seg_len_src_data = inference.load_data(dev_seg_len_src_file)
   sample_tgt_data = inference.load_data(dev_tgt_file)
 
   summary_name = "train_log"
@@ -280,7 +328,7 @@ def train(hparams, scope=None, target_session=""):
   run_full_eval(
       model_dir, infer_model, infer_sess,
       eval_model, eval_sess, hparams,
-      summary_writer, sample_src_data,
+      summary_writer, sample_src_data,sample_seg_src_data,sample_seg_len_src_data,
       sample_tgt_data)
 
   last_stats_step = global_step
@@ -321,7 +369,7 @@ def train(hparams, scope=None, target_session=""):
           "# Finished an epoch, step %d. Perform external evaluation" %
           global_step)
       run_sample_decode(infer_model, infer_sess,
-                        model_dir, hparams, summary_writer, sample_src_data,
+                        model_dir, hparams, summary_writer, sample_src_data, sample_seg_src_data,sample_seg_len_src_data,
                         sample_tgt_data)
       dev_scores, test_scores, _ = run_external_eval(
           infer_model, infer_sess, model_dir,
@@ -329,8 +377,8 @@ def train(hparams, scope=None, target_session=""):
       train_sess.run(
           train_model.iterator.initializer,
           feed_dict={train_model.skip_count_placeholder: 0})
-
-      # Evaluate on dev/test
+      #
+      # # Evaluate on dev/test
       last_eval_step = global_step
 
       utils.print_out("# Save eval, global step %d" % global_step)
@@ -343,7 +391,7 @@ def train(hparams, scope=None, target_session=""):
           global_step=global_step)
 
       run_sample_decode(infer_model, infer_sess,
-                        model_dir, hparams, summary_writer, sample_src_data,
+                        model_dir, hparams, summary_writer, sample_src_data,sample_seg_src_data,sample_seg_len_src_data,
                         sample_tgt_data)
       dev_ppl, test_ppl = run_internal_eval(
           eval_model, eval_sess, model_dir, hparams, summary_writer)
@@ -386,7 +434,7 @@ def train(hparams, scope=None, target_session=""):
 
       # Evaluate on dev/test
       run_sample_decode(infer_model, infer_sess,
-                        model_dir, hparams, summary_writer, sample_src_data,
+                        model_dir, hparams, summary_writer, sample_src_data,sample_seg_src_data,sample_seg_len_src_data,
                         sample_tgt_data)
       dev_ppl, test_ppl = run_internal_eval(
           eval_model, eval_sess, model_dir, hparams, summary_writer)
@@ -483,17 +531,27 @@ def _internal_eval(model, global_step, sess, iterator, iterator_feed_dict,
   return ppl
 
 
-def _sample_decode(model, global_step, sess, hparams, iterator, src_data,
-                   tgt_data, iterator_src_placeholder,
+def _sample_decode(model, global_step, sess, hparams, iterator, src_data,seg_src_data,seg_len_src_data,
+                   tgt_data, iterator_src_placeholder,seg_src_placeholder,
+                   seg_len_src_placeholder,
                    iterator_batch_size_placeholder, summary_writer):
-  """Pick a sentence and decode."""
+  """Randomly pick a sentence and decode."""
   decode_id = random.randint(0, len(src_data) - 1)
   utils.print_out("  # %d" % decode_id)
 
-  iterator_feed_dict = {
-      iterator_src_placeholder: [src_data[decode_id]],
-      iterator_batch_size_placeholder: 1,
-  }
+
+  if 'segment' in hparams.src_embed_type:
+      iterator_feed_dict = {
+          iterator_src_placeholder: [src_data[decode_id]],
+          seg_src_placeholder:[seg_src_data[decode_id]],
+         seg_len_src_placeholder:[seg_len_src_data[decode_id]],
+          iterator_batch_size_placeholder: 1,
+      }
+  else:
+      iterator_feed_dict = {
+          iterator_src_placeholder: [src_data[decode_id]],
+          iterator_batch_size_placeholder: 1,
+      }
   sess.run(iterator.initializer, feed_dict=iterator_feed_dict)
 
   nmt_outputs, attention_summary = model.decode(sess)

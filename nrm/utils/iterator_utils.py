@@ -44,44 +44,130 @@ def get_infer_iterator(src_dataset,
                        src_vocab_table,
                        batch_size,
                        eos,
+                       seg_src_dataset=None,
+                       seg_len_src_dataset=None,
+                       seg_len=None,
+                       seg_inter_separator=None,
+                       seg_separator=None,
                        src_max_len=None):
-  src_eos_id = tf.cast(src_vocab_table.lookup(tf.constant(eos)), tf.int32)
-  src_dataset = src_dataset.map(lambda src: tf.string_split([src]).values)
+  if seg_src_dataset is not None:
+      src_eos_id = tf.cast(src_vocab_table.lookup(tf.constant(eos)), tf.int32)
+      src_dataset = tf.data.Dataset.zip(
+          (src_dataset, seg_src_dataset, seg_len_src_dataset))
+      # First To chars
+      src_dataset = src_dataset.map(
+          lambda src, seg_src, len_src: (
+              tf.string_split([src]).values,
+              tf.string_split([seg_src], seg_separator).values,
+              tf.string_split([len_src]).values))
 
-  if src_max_len:
-    src_dataset = src_dataset.map(lambda src: src[:src_max_len])
-  # Convert the word strings to ids
-  src_dataset = src_dataset.map(
-      lambda src: tf.cast(src_vocab_table.lookup(src), tf.int32))
-  # Add in the word counts.
-  src_dataset = src_dataset.map(lambda src: (src, tf.size(src)))
 
-  def batching_func(x):
-    return x.padded_batch(
-        batch_size,
-        # The entry is the source line rows;
-        # this has unknown-length vectors.  The last entry is
-        # the source row size; this is a scalar.
-        padded_shapes=(
-            tf.TensorShape([None]),  # src
-            tf.TensorShape([])),  # src_len
-        # Pad the source sequences with eos tokens.
-        # (Though notice we don't generally need to do this since
-        # later on we will be masking out calculations past the true sequence.
-        padding_values=(
-            src_eos_id,  # src
-            0))  # src_len -- unused
+      if src_max_len:
+          src_dataset = src_dataset.map(
+              lambda src, seg_src,len_src: (
+              src[:src_max_len], seg_src[:src_max_len], len_src[:src_max_len]))
 
-  batched_dataset = batching_func(src_dataset)
-  batched_iter = batched_dataset.make_initializable_iterator()
-  (src_ids, src_seq_len) = batched_iter.get_next()
-  return BatchedInput(
-      initializer=batched_iter.initializer,
-      source=src_ids,
-      target_input=None,
-      target_output=None,
-      source_sequence_length=src_seq_len,
-      target_sequence_length=None)
+
+      # Convert the seg_word to seg_chars
+      def my_func(src):
+          new_src = tf.string_split(tf.reshape(src, [-1]), seg_inter_separator).values
+          new_src = tf.reshape(new_src, [-1, seg_len])
+          return new_src
+
+      src_dataset = src_dataset.map(lambda src, seg_src, len_src: (
+      src,  my_func(seg_src), len_src),)
+
+      # Convert the word strings to ids.  Word strings that are not in the
+      # vocab get the lookup table's default_value integer.
+      src_dataset = src_dataset.map(
+          lambda src, seg_src, len_src: (tf.cast(src_vocab_table.lookup(src), tf.int32),
+                                                                tf.cast(src_vocab_table.lookup(seg_src), tf.int32),
+                                                                tf.string_to_number(len_src, out_type=tf.int32)))
+
+      # Add in sequence lengths.
+      src_dataset = src_dataset.map(
+          lambda src, seg_src, len_src: (
+              src,  tf.size(src),  seg_src, len_src))
+
+      # Bucket by source sequence length (buckets for lengths 0-9, 10-19, ...)
+      def batching_func(x):
+          return x.padded_batch(
+              batch_size,
+              # The first three entries are the source and target line rows;
+              # these have unknown-length vectors.  The last two entries are
+              # the source and target row sizes; these are scalars.
+              padded_shapes=(
+                  tf.TensorShape([None]),  # src
+                  tf.TensorShape([]),  # src_len
+                  tf.TensorShape([None, seg_len]),  # seg_src
+                  tf.TensorShape([None]),  # seg_src_len
+              ),  # seg_tgt_output
+              # Pad the source and target sequences with eos tokens.
+              # (Though notice we don't generally need to do this since
+              # later on we will be masking out calculations past the true sequence.
+              padding_values=(
+                  src_eos_id,  # src
+                  0,  # src_len -- unused
+                  src_eos_id,  # seg_src
+                  0,
+              ))  # tgt_len -- unused
+
+      batched_dataset = batching_func(src_dataset)
+
+      batched_iter = batched_dataset.make_initializable_iterator()
+      (src_ids,src_seq_len, seg_src_ids, seg_src_lens) = (batched_iter.get_next())
+      return  SegBatchedInput(
+          initializer=batched_iter.initializer,
+          source=src_ids,
+          target_input=None,
+          target_output=None,
+          source_sequence_length=src_seq_len,
+          target_sequence_length=None,
+          seg_source=seg_src_ids,
+          seg_target_input=None,
+          seg_target_output=None,
+          seg_src_lens=seg_src_lens,
+          seg_tgt_lens=None,
+      )
+
+
+  else:
+      src_eos_id = tf.cast(src_vocab_table.lookup(tf.constant(eos)), tf.int32)
+      src_dataset = src_dataset.map(lambda src: tf.string_split([src]).values)
+      if src_max_len:
+        src_dataset = src_dataset.map(lambda src: src[:src_max_len])
+      # Convert the word strings to ids
+      src_dataset = src_dataset.map(
+          lambda src: tf.cast(src_vocab_table.lookup(src), tf.int32))
+      # Add in the word counts.
+      src_dataset = src_dataset.map(lambda src: (src, tf.size(src)))
+
+      def batching_func(x):
+        return x.padded_batch(
+            batch_size,
+            # The entry is the source line rows;
+            # this has unknown-length vectors.  The last entry is
+            # the source row size; this is a scalar.
+            padded_shapes=(
+                tf.TensorShape([None]),  # src
+                tf.TensorShape([])),  # src_len
+            # Pad the source sequences with eos tokens.
+            # (Though notice we don't generally need to do this since
+            # later on we will be masking out calculations past the true sequence.
+            padding_values=(
+                src_eos_id,  # src
+                0))  # src_len -- unused
+
+      batched_dataset = batching_func(src_dataset)
+      batched_iter = batched_dataset.make_initializable_iterator()
+      (src_ids, src_seq_len) = batched_iter.get_next()
+      return BatchedInput(
+          initializer=batched_iter.initializer,
+          source=src_ids,
+          target_input=None,
+          target_output=None,
+          source_sequence_length=src_seq_len,
+          target_sequence_length=None)
 
 
 def get_iterator(src_dataset,
@@ -155,7 +241,7 @@ def get_iterator(src_dataset,
       src_tgt_dataset = src_tgt_dataset.map(
           lambda src, tgt, seg_src, seg_tgt, len_src, len_tgt : (tf.cast(src_vocab_table.lookup(src), tf.int32),
                                                tf.cast(tgt_vocab_table.lookup(tgt), tf.int32),
-                                               tf.cast(tgt_vocab_table.lookup(seg_src), tf.int32),
+                                               tf.cast(src_vocab_table.lookup(seg_src), tf.int32),
                                                tf.cast(tgt_vocab_table.lookup(seg_tgt), tf.int32),
                                                tf.string_to_number(len_src, out_type=tf.int32),
                                                tf.string_to_number(len_tgt, out_type=tf.int32)),
@@ -340,6 +426,7 @@ def get_iterator(src_dataset,
           target_sequence_length=tgt_seq_len)
   else:
       batched_iter = batched_dataset.make_initializable_iterator()
+      #src, tgt_in, tgt_out, tf.size(src), tf.size(tgt_in), seg_src, seg_tgt_in, seg_tgt_out,len_src,len_tgt),
       (src_ids, tgt_input_ids, tgt_output_ids, src_seq_len,
        tgt_seq_len,seg_src_ids, seg_tgt_input_ids, seg_tgt_output_ids,seg_src_lens,seg_tgt_lens) = (batched_iter.get_next())
       return SegBatchedInput(

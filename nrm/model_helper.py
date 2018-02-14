@@ -154,7 +154,8 @@ def create_train_model(
 class EvalModel(
     collections.namedtuple("EvalModel",
                            ("graph", "model", "src_file_placeholder",
-                            "tgt_file_placeholder", "iterator"))):
+"seg_src_file_placeholder","seg_len_src_file_placeholder",
+                            "tgt_file_placeholder","seg_tgt_file_placeholder","seg_len_tgt_file_placeholder", "iterator"))):
   pass
 
 
@@ -171,6 +172,30 @@ def create_eval_model(model_creator, hparams, scope=None, extra_args=None):
     tgt_file_placeholder = tf.placeholder(shape=(), dtype=tf.string)
     src_dataset = tf.data.TextLineDataset(src_file_placeholder)
     tgt_dataset = tf.data.TextLineDataset(tgt_file_placeholder)
+    if 'segment' in hparams.src_embed_type:
+        utils.print_out('Data_Util will load the segment information')
+        seg_src_file = tf.placeholder(shape=(), dtype=tf.string)#"%s.%s_seg" % (hparams.train_prefix, hparams.src)
+        seg_tgt_file = tf.placeholder(shape=(), dtype=tf.string)#"%s.%s_seg" % (hparams.train_prefix, hparams.tgt)
+        seg_len_src_file = tf.placeholder(shape=(), dtype=tf.string)#"%s.%s_seg_len" % (hparams.train_prefix, hparams.src)
+        seg_len_tgt_file = tf.placeholder(shape=(), dtype=tf.string)#"%s.%s_seg_len" % (hparams.train_prefix, hparams.tgt)
+        seg_src_dataset = tf.data.TextLineDataset(seg_src_file)
+        seg_tgt_dataset = tf.data.TextLineDataset(seg_tgt_file)
+        seg_len_src_dataset = tf.data.TextLineDataset(seg_len_src_file)
+        seg_len_tgt_dataset = tf.data.TextLineDataset(seg_len_tgt_file)
+        seg_len = hparams.seg_len
+    else:
+        seg_src_dataset = None
+        seg_tgt_dataset = None
+        seg_len_src_dataset = None
+        seg_len_tgt_dataset = None
+        seg_src_file = None
+        seg_tgt_file = None
+        seg_len_src_file = None
+        seg_len_tgt_file = None
+
+        seg_len = -1
+
+
     iterator = iterator_utils.get_iterator(
         src_dataset,
         tgt_dataset,
@@ -179,6 +204,13 @@ def create_eval_model(model_creator, hparams, scope=None, extra_args=None):
         hparams.batch_size,
         sos=hparams.sos,
         eos=hparams.eos,
+        seg_len_src_dataset=seg_len_src_dataset,
+        seg_len_tgt_dataset=seg_len_tgt_dataset,
+        seg_src_dataset=seg_src_dataset,
+        seg_tgt_dataset=seg_tgt_dataset,
+        seg_len=seg_len,
+        seg_separator=hparams.seg_separator,
+        seg_inter_separator=hparams.seg_inter_separator,
         random_seed=hparams.random_seed,
         num_buckets=hparams.num_buckets,
         src_max_len=hparams.src_max_len_infer,
@@ -195,14 +227,18 @@ def create_eval_model(model_creator, hparams, scope=None, extra_args=None):
       graph=graph,
       model=model,
       src_file_placeholder=src_file_placeholder,
+      seg_src_file_placeholder=seg_src_file,
+      seg_len_src_file_placeholder=seg_len_src_file,
       tgt_file_placeholder=tgt_file_placeholder,
+      seg_tgt_file_placeholder=seg_tgt_file,
+      seg_len_tgt_file_placeholder=seg_len_tgt_file,
       iterator=iterator)
 
 
 class InferModel(
     collections.namedtuple("InferModel",
                            ("graph", "model", "src_placeholder",
-                            "batch_size_placeholder", "iterator"))):
+                            "batch_size_placeholder", "iterator","seg_src_placeholder","seg_len_src_placeholder"))):
   pass
 
 
@@ -219,14 +255,35 @@ def create_infer_model(model_creator, hparams, scope=None, extra_args=None):
         tgt_vocab_file, default_value=vocab_utils.UNK)
 
     src_placeholder = tf.placeholder(shape=[None], dtype=tf.string)
+    seg_src_placeholder = tf.placeholder(shape=[None], dtype=tf.string)
+    seg_len_src_placeholder = tf.placeholder(shape=[None], dtype=tf.string)
     batch_size_placeholder = tf.placeholder(shape=[], dtype=tf.int64)
 
     src_dataset = tf.data.Dataset.from_tensor_slices(
         src_placeholder)
+    seg_src_dataset = tf.data.Dataset.from_tensor_slices(
+        seg_src_placeholder)
+    seg_len_src_dataset = tf.data.Dataset.from_tensor_slices(
+        seg_len_src_placeholder)
+    if 'segment' in hparams.src_embed_type:
+        utils.print_out('Data_Util will load the segment information')
+        seg_src_dataset = seg_src_dataset
+        seg_len_src_dataset = seg_len_src_dataset
+        seg_len = hparams.seg_len
+    else:
+        seg_src_dataset = None
+        seg_len_src_dataset = None
+        seg_len = -1
+
     iterator = iterator_utils.get_infer_iterator(
         src_dataset,
         src_vocab_table,
         batch_size=batch_size_placeholder,
+        seg_len_src_dataset=seg_len_src_dataset,
+        seg_src_dataset=seg_src_dataset,
+        seg_len=seg_len,
+        seg_separator=hparams.seg_separator,
+        seg_inter_separator=hparams.seg_inter_separator,
         eos=hparams.eos,
         src_max_len=hparams.src_max_len_infer)
     model = model_creator(
@@ -243,6 +300,8 @@ def create_infer_model(model_creator, hparams, scope=None, extra_args=None):
       model=model,
       src_placeholder=src_placeholder,
       batch_size_placeholder=batch_size_placeholder,
+      seg_src_placeholder=seg_src_placeholder,
+      seg_len_src_placeholder=seg_len_src_placeholder,
       iterator=iterator)
 
 

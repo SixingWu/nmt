@@ -550,21 +550,29 @@ class Model(BaseModel):
 
     iterator = self.iterator
     source = iterator.source
+    # 默认是true，也就是iterator过来的是batch，*，、*
+    utils.print_out('Time major: %s' % self.time_major)
     if self.time_major:
       source = tf.transpose(source)
 
     with tf.variable_scope("encoder") as scope:
       dtype = scope.dtype
-
+      utils.print_out('source embedding type=%s' % hparams.src_embed_type)
       if hparams.src_embed_type == 'raw':
           # Look up embedding, emp_inp: [max_time, batch_size, num_units]
           encoder_emb_inp = tf.nn.embedding_lookup(
               self.embedding_encoder, source)
       elif hparams.src_embed_type == 'cnn_segment':
+          # [batch,seq_len,seg_len]
           seg_source = iterator.seg_source
+          flatten_seg_source = tf.nn.embedding_lookup(self.embedding_encoder,  seg_source)
+          averaged_seg_source = tf.reduce_mean(flatten_seg_source,axis=-1)
+          if self.time_major:
+              averaged_seg_source = tf.transpose(averaged_seg_source,perm=[1,0,2])
           # Look up embedding, emp_inp: [max_time, batch_size, num_units]
-          encoder_emb_inp = tf.nn.embedding_lookup(
-              self.embedding_encoder, source)
+          encoder_emb_inp = averaged_seg_source
+      else:
+          raise Exception('Unknown src_embed_type  %s' % hparams.src_embed_type )
 
       # Encoder_outpus: [max_time, batch_size, num_units]
       if hparams.encoder_type == "uni":
