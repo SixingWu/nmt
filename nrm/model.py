@@ -29,6 +29,8 @@ from tensorflow.python.layers import core as layers_core
 from . import model_helper
 from .utils import iterator_utils
 from .utils import misc_utils as utils
+from . import embedding_helper
+from .embedding_helper import EncoderParam
 
 utils.check_tensorflow_version()
 
@@ -241,6 +243,28 @@ class BaseModel(object):
             src_embed_file=hparams.src_embed_file,
             tgt_embed_file=hparams.tgt_embed_file,
             scope=scope,))
+
+    if 'segment' in hparams.src_embed_type:
+        with tf.variable_scope('segment_embedding'):
+            if hparams.seg_embed_mode == 'share':
+                self.seg_embedding_encoder=self.embedding_encoder
+                self.seg_embedding_decoder=self.embedding_decoder
+            elif hparams.seg_embed_mode == 'separate':
+                self.seg_embedding_encoder, self.seg_embedding_decoder = (
+                    model_helper.create_emb_for_encoder_and_decoder(
+                        share_vocab=hparams.share_vocab,
+                        src_vocab_size=hparams.seg_src_vocab_size,
+                        tgt_vocab_size=hparams.seg_tgt_vocab_size,
+                        src_embed_size=hparams.seg_embed_dim,
+                        tgt_embed_size=hparams.seg_embed_dim,
+                        num_partitions=hparams.num_embeddings_partitions,
+                        src_vocab_file=hparams.src_vocab_file+'_seg',
+                        tgt_vocab_file=hparams.tgt_vocab_file+'_seg',
+                        src_embed_file=None,
+                        tgt_embed_file=None,
+                        scope=scope, ))
+            else:
+                raise Exception('Unkown seg_embed_mode')
 
   def train(self, sess):
     assert self.mode == tf.contrib.learn.ModeKeys.TRAIN
@@ -559,67 +583,94 @@ class Model(BaseModel):
       dtype = scope.dtype
       utils.print_out('source embedding type=%s' % hparams.src_embed_type)
       if hparams.src_embed_type == 'raw':
-          # Look up embedding, emp_inp: [max_time, batch_size, num_units]
+          # Look up embedding, emp_inp: [max_time, batch_size, embedding]
           encoder_emb_inp = tf.nn.embedding_lookup(
               self.embedding_encoder, source)
-      elif hparams.src_embed_type == 'cnn_segment':
-          # [batch,seq_len,seg_len]
+      elif hparams.src_embed_type == 'avg_segment':
           seg_source = iterator.seg_source
-          flatten_seg_source = tf.nn.embedding_lookup(self.embedding_encoder,  seg_source)
-          averaged_seg_source = tf.reduce_mean(flatten_seg_source,axis=-1)
-          if self.time_major:
-              averaged_seg_source = tf.transpose(averaged_seg_source,perm=[1,0,2])
-          # Look up embedding, emp_inp: [max_time, batch_size, num_units]
-          encoder_emb_inp = averaged_seg_source
+          encoder_emb_inp = tf.nn.embedding_lookup(self.embedding_encoder, seg_source)
+
+      elif hparams.src_embed_type == 'rnn_segment':
+          with tf.variable_scope('rnn_segment_embedding'):
+              # [batch, seq_len, seg_len]
+              seg_source = iterator.seg_source
+              # [batch, seq_len]
+              seg_len_source = iterator.seg_src_lens
+              # [batch, seq_len, seg_len, embedding]
+              encoder_emb_inp = tf.nn.embedding_lookup(self.seg_embedding_encoder, seg_source)
+              def sub_process(x):
+                ##x:[seq_len, seg_len, embedding]
+                x = tf.transpose(x, perm=[0,2,1])
+                x = tf.reduce_mean(x, axis=-1,)
+                # [seq_len, embedding]
+                return x
+
+
+              # [batch,seq_len,embedding]
+              # encoder_emb_inp = tf.map_fn(sub_process,encoder_emb_inp)
+              # encoder_emb_inp = tf.transpose(encoder_emb_inp, perm=[1, 0, 2])
+
+              _batch_size = tf.shape(encoder_emb_inp)[0]
+              _seq_len = tf.shape(encoder_emb_inp)[1]
+              # flattern to [batch_size*seq_len,seg_len,embed]
+              encoder_emb_inp = tf.reshape(encoder_emb_inp,[_batch_size * _seq_len, hparams.seg_len, hparams.seg_embed_dim])
+              encoder_emb_inp = tf.transpose(encoder_emb_inp, perm=[1,0,2])
+              seg_len_source = tf.reshape(seg_len_source, [_batch_size,_seq_len])
+              flattern_sequence_length = tf.reshape(seg_len_source,[-1])
+              with tf.variable_scope('word_embedding_encoder'):
+                  word_encoder = EncoderParam(encoder_type="uni",
+                                                   num_layers=1,
+                                                   num_residual_layers=0,
+                                                   unit_type="gru", # In order to lightweight
+                                                   forget_bias=hparams.forget_bias,
+                                                   dropout=hparams.dropout,
+                                                   num_gpus=hparams.num_gpus,
+                                                   mode=self.mode,
+                                                   enocder_seq_input=encoder_emb_inp,
+                                                   encoder_seq_len=flattern_sequence_length,
+                                                   dtype=dtype,
+                                                   single_cell_fn=self.single_cell_fn,
+                                                   #LSTM 2 Tuple
+                                                   num_units=(hparams.seg_embed_dim),
+                                                   name=None)
+                  word_encoder_outputs, word_encoder_state = embedding_helper.build_rnn_encoder(word_encoder)
+                  print("debug" + str(word_encoder_state))
+                  #[batch_size * seq_len, embed]
+                  encoder_emb_inp = word_encoder_state
+                  encoder_emb_inp = embedding_helper.projection(encoder_emb_inp,hparams.seg_embed_dim,hparams.embed_dim)
+                  encoder_emb_inp = tf.reshape(encoder_emb_inp, [_batch_size, _seq_len, hparams.embed_dim])
+                  #[max_time, batch_size, embedding]
+                  encoder_emb_inp = tf.transpose(encoder_emb_inp, perm=[1,0,2])
+                  encoder_emb_inp += tf.nn.embedding_lookup(
+                  self.embedding_encoder, source)
+
+
+
+
+
+              # Look up embedding, emp_inp: [max_time, batch_size, num_units]
+
       else:
           raise Exception('Unknown src_embed_type  %s' % hparams.src_embed_type )
 
-      # Encoder_outpus: [max_time, batch_size, num_units]
-      if hparams.encoder_type == "uni":
-        utils.print_out("build a uni-encoder: num_layers = %d, num_residual_layers=%d" %
-                        (num_layers, num_residual_layers))
-        cell = self._build_encoder_cell(
-            hparams, num_layers, num_residual_layers)
 
-        encoder_outputs, encoder_state = tf.nn.dynamic_rnn(
-            cell,
-            encoder_emb_inp,
-            dtype=dtype,
-            sequence_length=iterator.source_sequence_length,
-            time_major=self.time_major,
-            swap_memory=True)
-      elif hparams.encoder_type == "bi":
-        num_bi_layers = int(num_layers/2)
-        num_bi_residual_layers = int(num_residual_layers/2)
-        utils.print_out("build a num_bi_layers = %d, num_bi_residual_layers=%d" %
-                        (num_bi_layers, num_bi_residual_layers))
-
-        encoder_outputs, bi_encoder_state = (
-            self._build_bidirectional_rnn(
-                inputs=encoder_emb_inp,
-                sequence_length=iterator.source_sequence_length,
-                dtype=dtype,
-                hparams=hparams,
-                num_bi_layers=num_bi_layers,
-                num_bi_residual_layers=num_bi_residual_layers))
-
-        if num_bi_layers == 1:
-          encoder_state = bi_encoder_state
-        else:
-          # alternatively concat forward and backward states
-          encoder_state = []
-          for layer_id in range(num_bi_layers):
-            encoder_state.append(bi_encoder_state[0][layer_id])  # forward
-            encoder_state.append(bi_encoder_state[1][layer_id])  # backward
-          encoder_state = tuple(encoder_state)
-      elif hparams.encoder_type == 'direct':
-          # TODO Implement this by vector * implementing
-          encoder_outputs = encoder_emb_inp
-          last_states = tf.nn.embedding_lookup(encoder_outputs,iterator.source_sequence_length)
-          last_states = tf.reshape(last_states, [-1, hparams.embed_dim])
-          encoder_state = tuple([last_states,last_states])
-      else:
-        raise ValueError("Unknown encoder_type %s" % hparams.encoder_type)
+      utils.print_out("encoder_emb_inp : %s" % str(encoder_emb_inp))
+      # build the top level Encoder
+      top_level_encoder = EncoderParam(encoder_type=hparams.encoder_type,
+                                       num_layers=hparams.num_layers,
+                                       num_residual_layers=hparams.num_residual_layers,
+                                       unit_type=hparams.unit_type,
+                                       forget_bias=hparams.forget_bias,
+                                       dropout=hparams.dropout,
+                                       num_gpus=hparams.num_gpus,
+                                       mode=self.mode,
+                                       enocder_seq_input=encoder_emb_inp,
+                                       encoder_seq_len=iterator.source_sequence_length,
+                                       dtype=dtype,
+                                       single_cell_fn=self.single_cell_fn,
+                                       num_units= hparams.num_units,
+                                       name=None)
+    encoder_outputs, encoder_state = embedding_helper.build_rnn_encoder(top_level_encoder)
     return encoder_outputs, encoder_state
 
   def _build_bidirectional_rnn(self, inputs, sequence_length,

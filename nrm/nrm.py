@@ -183,7 +183,7 @@ def add_arguments(parser):
   parser.add_argument("--eos", type=str, default="</s>",
                       help="End-of-sentence symbol.")
   parser.add_argument("--share_vocab", type="bool", nargs="?", const=True,
-                      default=True,
+                      default=False,
                       help="""\
       Whether to use the source vocab and embeddings for both source and
       target.\
@@ -311,6 +311,9 @@ def create_hparams(flags):
       seg_len=8,
       seg_separator='\t',
       seg_inter_separator = ' ',
+      seg_embed_mode='separate',
+      # 改了不一样
+      seg_embed_dim=128,
 
       # Early Stop
       debug=flags.debug,
@@ -448,6 +451,8 @@ def extend_hparams(hparams):
   if hparams.vocab_prefix:
     src_vocab_file = hparams.vocab_prefix + "." + hparams.src
     tgt_vocab_file = hparams.vocab_prefix + "." + hparams.tgt
+    seg_src_vocab_file = hparams.vocab_prefix + "." + hparams.src+"_seg"
+    seg_tgt_vocab_file = hparams.vocab_prefix + "." + hparams.tgt+"_seg"
   else:
     raise ValueError("hparams.vocab_prefix must be provided.")
 
@@ -459,6 +464,8 @@ def extend_hparams(hparams):
       sos=hparams.sos,
       eos=hparams.eos,
       unk=vocab_utils.UNK)
+
+
 
   # Target vocab
   if hparams.share_vocab:
@@ -477,6 +484,35 @@ def extend_hparams(hparams):
   hparams.add_hparam("tgt_vocab_size", tgt_vocab_size)
   hparams.add_hparam("src_vocab_file", src_vocab_file)
   hparams.add_hparam("tgt_vocab_file", tgt_vocab_file)
+
+  if 'segment' in hparams.src_embed_type:
+      # Source vocab
+      seg_src_vocab_size, seg_src_vocab_file = vocab_utils.check_vocab(
+          seg_src_vocab_file,
+          hparams.out_dir,
+          check_special_token=hparams.check_special_token,
+          sos=hparams.sos,
+          eos=hparams.eos,
+          unk=vocab_utils.UNK)
+
+      # Target vocab
+      if hparams.share_vocab:
+          utils.print_out("  using source vocab for target")
+          seg_tgt_vocab_file = seg_src_vocab_file
+          seg_tgt_vocab_size = seg_src_vocab_size
+      else:
+          seg_tgt_vocab_size, seg_tgt_vocab_file = vocab_utils.check_vocab(
+              seg_tgt_vocab_file,
+              hparams.out_dir,
+              check_special_token=hparams.check_special_token,
+              sos=hparams.sos,
+              eos=hparams.eos,
+              unk=vocab_utils.UNK)
+      hparams.add_hparam("seg_src_vocab_size", seg_src_vocab_size)
+      hparams.add_hparam("seg_tgt_vocab_size", seg_tgt_vocab_size)
+      hparams.add_hparam("seg_src_vocab_file", seg_src_vocab_file)
+      hparams.add_hparam("seg_tgt_vocab_file", seg_tgt_vocab_file)
+
 
   # Pretrained Embeddings:
   hparams.add_hparam("src_embed_file", "")

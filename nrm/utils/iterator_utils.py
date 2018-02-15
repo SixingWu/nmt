@@ -44,6 +44,7 @@ def get_infer_iterator(src_dataset,
                        src_vocab_table,
                        batch_size,
                        eos,
+                       seg_src_vocab_table=None,
                        seg_src_dataset=None,
                        seg_len_src_dataset=None,
                        seg_len=None,
@@ -81,7 +82,7 @@ def get_infer_iterator(src_dataset,
       # vocab get the lookup table's default_value integer.
       src_dataset = src_dataset.map(
           lambda src, seg_src, len_src: (tf.cast(src_vocab_table.lookup(src), tf.int32),
-                                                                tf.cast(src_vocab_table.lookup(seg_src), tf.int32),
+                                                                tf.cast(seg_src_vocab_table.lookup(seg_src), tf.int32),
                                                                 tf.string_to_number(len_src, out_type=tf.int32)))
 
       # Add in sequence lengths.
@@ -179,6 +180,8 @@ def get_iterator(src_dataset,
                  eos,
                  random_seed,
                  num_buckets,
+                 seg_src_vocab_table=None,
+                 seg_tgt_vocab_table=None,
                  seg_src_dataset=None,
                  seg_tgt_dataset=None,
                  seg_len_src_dataset=None,
@@ -241,22 +244,23 @@ def get_iterator(src_dataset,
       src_tgt_dataset = src_tgt_dataset.map(
           lambda src, tgt, seg_src, seg_tgt, len_src, len_tgt : (tf.cast(src_vocab_table.lookup(src), tf.int32),
                                                tf.cast(tgt_vocab_table.lookup(tgt), tf.int32),
-                                               tf.cast(src_vocab_table.lookup(seg_src), tf.int32),
-                                               tf.cast(tgt_vocab_table.lookup(seg_tgt), tf.int32),
+                                               tf.cast(seg_src_vocab_table.lookup(seg_src), tf.int32),
+                                               tf.cast(seg_tgt_vocab_table.lookup(seg_tgt), tf.int32),
                                                tf.string_to_number(len_src, out_type=tf.int32),
                                                tf.string_to_number(len_tgt, out_type=tf.int32)),
           num_parallel_calls=num_parallel_calls).prefetch(output_buffer_size)
       # Create a tgt_input prefixed with <sos> and a tgt_output suffixed with <eos>.
       src_tgt_dataset = src_tgt_dataset.map(
-          lambda src, tgt, seg_src, seg_tgt, len_src, len_tgt: (src,
+          lambda src, tgt, seg_src, seg_tgt, len_src, len_tgt: (
+                            src,
                             tf.concat(([tgt_sos_id], tgt), 0),
                             tf.concat((tgt, [tgt_eos_id]), 0),
                             seg_src,
                             # TODO 这里的开始结束符号是否需要修改
                             tf.concat(([[tgt_sos_id] * seg_len], seg_tgt), 0),
                             tf.concat((seg_tgt, [[tgt_eos_id] * seg_len]), 0),
-                            tf.concat(([0], len_src), 0),
-                            tf.concat((len_tgt, [0]), 0),
+                            len_src,
+                            len_tgt,
                                                                 ),
           num_parallel_calls=num_parallel_calls).prefetch(output_buffer_size)
       # Add in sequence lengths.

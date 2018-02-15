@@ -6,9 +6,11 @@ import tensorflow as tf
 class EncoderParam(
     collections.namedtuple("EncoderParam", ("encoder_type", "num_layers", "num_residual_layers",
                                             "unit_type","forget_bias","dropout","num_gpus","mode",
-                                            "enocder_seq_input","encoder_seq_len","dtype"
+                                            "enocder_seq_input","encoder_seq_len","dtype",
                                           "single_cell_fn","num_units","name"))):
   pass
+
+
 
 def _build_encoder_cell(encoder_param, num_layers, num_residual_layers,
                       base_gpu=0):
@@ -66,9 +68,9 @@ def _build_bidirectional_rnn(inputs, sequence_length,
 
     return tf.concat(bi_outputs, -1), bi_state
 
-def rnn_encode_sequence_to_vector(encoder_param):
+def build_rnn_encoder(encoder_param):
     """
-    Embed a 2-D Tensor two a 2d tensor
+    RNN Encoder
     Time major
     :return:
     """
@@ -98,7 +100,7 @@ def rnn_encode_sequence_to_vector(encoder_param):
                 inputs=encoder_param.enocder_seq_input,
                 sequence_length=encoder_param.encoder_seq_len,
                 dtype=encoder_param.dtype,
-                hparams=encoder_param,
+                encoder_param=encoder_param,
                 num_bi_layers=num_bi_layers,
                 num_bi_residual_layers=num_bi_residual_layers))
 
@@ -114,3 +116,11 @@ def rnn_encode_sequence_to_vector(encoder_param):
     else:
         raise ValueError("Unknown encoder_type %s" % encoder_param.encoder_type)
     return encoder_outputs, encoder_state
+
+def projection(input, input_dim, output_dim, activation=None):
+    W = tf.get_variable(name='embedding_projection_w', shape=[input_dim, output_dim])
+    b = tf.get_variable(name='embedding_bias_w', shape=[output_dim])
+    tmp = tf.matmul(input,W) + b
+    if activation is not None:
+        tmp = activation(tmp)
+    return tmp

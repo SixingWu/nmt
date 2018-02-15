@@ -78,16 +78,22 @@ def create_train_model(
 
   src_vocab_file = hparams.src_vocab_file
   tgt_vocab_file = hparams.tgt_vocab_file
+
   graph = tf.Graph()
 
   with graph.as_default(), tf.container(scope or "train"):
-    utils.print_out('utilize the original vocab')
+    utils.print_out('utilize the original vocab and seg_vocab')
     src_vocab_table, tgt_vocab_table = vocab_utils.create_vocab_tables(
         src_vocab_file, tgt_vocab_file, hparams.share_vocab)
+
 
     src_dataset = tf.data.TextLineDataset(src_file)
     tgt_dataset = tf.data.TextLineDataset(tgt_file)
     if 'segment' in hparams.src_embed_type:
+        seg_src_vocab_file = hparams.src_vocab_file + '_seg'
+        seg_tgt_vocab_file = hparams.tgt_vocab_file + '_seg'
+        seg_src_vocab_table, seg_tgt_vocab_table = vocab_utils.create_seg_vocab_tables(
+            seg_src_vocab_file, seg_tgt_vocab_file, hparams.share_vocab)
         utils.print_out('Data_Util will load the segment information')
         seg_src_file = "%s.%s_seg" % (hparams.train_prefix, hparams.src)
         seg_tgt_file = "%s.%s_seg" % (hparams.train_prefix, hparams.tgt)
@@ -112,6 +118,8 @@ def create_train_model(
         tgt_dataset,
         src_vocab_table,
         tgt_vocab_table,
+        seg_src_vocab_table=seg_src_vocab_table,
+        seg_tgt_vocab_table=seg_tgt_vocab_table,
         seg_len_src_dataset=seg_len_src_dataset,
         seg_len_tgt_dataset=seg_len_tgt_dataset,
         seg_src_dataset=seg_src_dataset,
@@ -173,6 +181,10 @@ def create_eval_model(model_creator, hparams, scope=None, extra_args=None):
     src_dataset = tf.data.TextLineDataset(src_file_placeholder)
     tgt_dataset = tf.data.TextLineDataset(tgt_file_placeholder)
     if 'segment' in hparams.src_embed_type:
+        seg_src_vocab_file = hparams.src_vocab_file + '_seg'
+        seg_tgt_vocab_file = hparams.tgt_vocab_file + '_seg'
+        seg_src_vocab_table, seg_tgt_vocab_table = vocab_utils.create_seg_vocab_tables(
+            seg_src_vocab_file, seg_tgt_vocab_file, hparams.share_vocab)
         utils.print_out('Data_Util will load the segment information')
         seg_src_file = tf.placeholder(shape=(), dtype=tf.string)#"%s.%s_seg" % (hparams.train_prefix, hparams.src)
         seg_tgt_file = tf.placeholder(shape=(), dtype=tf.string)#"%s.%s_seg" % (hparams.train_prefix, hparams.tgt)
@@ -204,6 +216,8 @@ def create_eval_model(model_creator, hparams, scope=None, extra_args=None):
         hparams.batch_size,
         sos=hparams.sos,
         eos=hparams.eos,
+        seg_src_vocab_table=seg_src_vocab_table,
+        seg_tgt_vocab_table=seg_tgt_vocab_table,
         seg_len_src_dataset=seg_len_src_dataset,
         seg_len_tgt_dataset=seg_len_tgt_dataset,
         seg_src_dataset=seg_src_dataset,
@@ -251,6 +265,7 @@ def create_infer_model(model_creator, hparams, scope=None, extra_args=None):
   with graph.as_default(), tf.container(scope or "infer"):
     src_vocab_table, tgt_vocab_table = vocab_utils.create_vocab_tables(
         src_vocab_file, tgt_vocab_file, hparams.share_vocab)
+    # TODO reverse
     reverse_tgt_vocab_table = lookup_ops.index_to_string_table_from_file(
         tgt_vocab_file, default_value=vocab_utils.UNK)
 
@@ -266,6 +281,10 @@ def create_infer_model(model_creator, hparams, scope=None, extra_args=None):
     seg_len_src_dataset = tf.data.Dataset.from_tensor_slices(
         seg_len_src_placeholder)
     if 'segment' in hparams.src_embed_type:
+        seg_src_vocab_file = hparams.src_vocab_file + '_seg'
+        seg_tgt_vocab_file = hparams.tgt_vocab_file + '_seg'
+        seg_src_vocab_table, seg_tgt_vocab_table = vocab_utils.create_seg_vocab_tables(
+            seg_src_vocab_file, seg_tgt_vocab_file, hparams.share_vocab)
         utils.print_out('Data_Util will load the segment information')
         seg_src_dataset = seg_src_dataset
         seg_len_src_dataset = seg_len_src_dataset
@@ -279,6 +298,7 @@ def create_infer_model(model_creator, hparams, scope=None, extra_args=None):
         src_dataset,
         src_vocab_table,
         batch_size=batch_size_placeholder,
+        seg_src_vocab_table=seg_src_vocab_table,
         seg_len_src_dataset=seg_len_src_dataset,
         seg_src_dataset=seg_src_dataset,
         seg_len=seg_len,

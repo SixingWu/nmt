@@ -19,6 +19,7 @@ import math
 import os
 import random
 import time
+import numpy as np
 
 import tensorflow as tf
 
@@ -325,6 +326,7 @@ def train(hparams, scope=None, target_session=""):
       os.path.join(out_dir, summary_name), train_model.graph)
 
   # First evaluation
+
   run_full_eval(
       model_dir, infer_model, infer_sess,
       eval_model, eval_sess, hparams,
@@ -526,6 +528,12 @@ def _internal_eval(model, global_step, sess, iterator, iterator_feed_dict,
                    summary_writer, label):
   """Computing perplexity."""
   sess.run(iterator.initializer, feed_dict=iterator_feed_dict)
+  # TODO DELETE
+  # (t0,t1) = sess.run([iterator.seg_source,iterator.seg_src_lens])
+  # print(np.shape(t0))
+  # print(t0)
+  # print(np.shape(t1))
+  # print(t1)
   ppl = model_helper.compute_perplexity(model, sess, label)
   utils.add_summary(summary_writer, global_step, "%s_ppl" % label, ppl)
   return ppl
@@ -544,7 +552,7 @@ def _sample_decode(model, global_step, sess, hparams, iterator, src_data,seg_src
       iterator_feed_dict = {
           iterator_src_placeholder: [src_data[decode_id]],
           seg_src_placeholder:[seg_src_data[decode_id]],
-         seg_len_src_placeholder:[seg_len_src_data[decode_id]],
+          seg_len_src_placeholder:[seg_len_src_data[decode_id]],
           iterator_batch_size_placeholder: 1,
       }
   else:

@@ -22,15 +22,15 @@ def add_chars_to_vocab(vocab_path, word_num = -1):
                 lines = lines[3:]
             for line in lines:
                 word = line.strip('\n')
-                vocab.add(word)
+                #vocab.add(word)
                 for char in word:
                     vocab.add(char)
             for token in vocab:
                 fout.write(token+'\n')
             print('new num: %d' % len(vocab))
 
-add_chars_to_vocab(r'C:\Users\v-sixwu\PycharmProjects\nmt\nmt_data\vocab.en')
-add_chars_to_vocab(r'C:\Users\v-sixwu\PycharmProjects\nmt\nmt_data\vocab.vi')
+add_chars_to_vocab(r'/Users/mebiuw/PycharmProjects/nmt/nmt_data/vocab.en')
+add_chars_to_vocab(r'/Users/mebiuw/PycharmProjects/nmt/nmt_data/vocab.vi')
 
 
 def convert_to_seg_file(vocab_path, seg_len):
@@ -51,10 +51,10 @@ def convert_to_seg_file(vocab_path, seg_len):
                 fout.write(seg_separator.join(seg_items) + '\n')
 
 
-convert_to_seg_file(r'C:\Users\v-sixwu\PycharmProjects\nmt\nmt_data\train.en', seg_len)
-convert_to_seg_file(r'C:\Users\v-sixwu\PycharmProjects\nmt\nmt_data\train.vi', seg_len)
-convert_to_seg_file(r'C:\Users\v-sixwu\PycharmProjects\nmt\nmt_data\tst2012.en', seg_len)
-convert_to_seg_file(r'C:\Users\v-sixwu\PycharmProjects\nmt\nmt_data\tst2012.vi', seg_len)
-convert_to_seg_file(r'C:\Users\v-sixwu\PycharmProjects\nmt\nmt_data\tst2013.en', seg_len)
-convert_to_seg_file(r'C:\Users\v-sixwu\PycharmProjects\nmt\nmt_data\tst2013.vi', seg_len)
+convert_to_seg_file(r'/Users/mebiuw/PycharmProjects/nmt/nmt_data/train.en', seg_len)
+convert_to_seg_file(r'/Users/mebiuw/PycharmProjects/nmt/nmt_data/train.vi', seg_len)
+convert_to_seg_file(r'/Users/mebiuw/PycharmProjects/nmt/nmt_data/tst2012.en', seg_len)
+convert_to_seg_file(r'/Users/mebiuw/PycharmProjects/nmt/nmt_data/tst2012.vi', seg_len)
+convert_to_seg_file(r'/Users/mebiuw/PycharmProjects/nmt/nmt_data/tst2013.en', seg_len)
+convert_to_seg_file(r'/Users/mebiuw/PycharmProjects/nmt/nmt_data/tst2013.vi', seg_len)
 
