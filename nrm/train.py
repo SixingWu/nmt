@@ -136,12 +136,18 @@ def run_external_eval(infer_model, infer_sess, model_dir, hparams,
 
   dev_tgt_file = "%s.%s" % (hparams.dev_prefix, hparams.tgt)
 
-  dev_infer_iterator_feed_dict = {
-      infer_model.src_placeholder: inference.load_data(dev_src_file),
-      infer_model.seg_src_placeholder: inference.load_data(dev_seg_src_file),
-      infer_model.seg_len_src_placeholder: inference.load_data(dev_seg_len_src_file),
-      infer_model.batch_size_placeholder: hparams.infer_batch_size,
-  }
+  if 'segment' in hparams.src_embed_type:
+      dev_infer_iterator_feed_dict = {
+          infer_model.src_placeholder: inference.load_data(dev_src_file),
+          infer_model.seg_src_placeholder: inference.load_data(dev_seg_src_file),
+          infer_model.seg_len_src_placeholder: inference.load_data(dev_seg_len_src_file),
+          infer_model.batch_size_placeholder: hparams.infer_batch_size,
+      }
+  else:
+      dev_infer_iterator_feed_dict = {
+          infer_model.src_placeholder: inference.load_data(dev_src_file),
+          infer_model.batch_size_placeholder: hparams.infer_batch_size,
+      }
   dev_scores = _external_eval(
       loaded_infer_model,
       global_step,
@@ -160,12 +166,18 @@ def run_external_eval(infer_model, infer_sess, model_dir, hparams,
     test_seg_src_file = "%s.%s_seg" % (hparams.test_prefix, hparams.src)
     test_seg_len_src_file = "%s.%s_seg_len" % (hparams.test_prefix, hparams.src)
     test_tgt_file = "%s.%s" % (hparams.test_prefix, hparams.tgt)
-    test_infer_iterator_feed_dict = {
-        infer_model.src_placeholder: inference.load_data(test_src_file),
-        infer_model.seg_src_placeholder: inference.load_data(test_seg_src_file),
-        infer_model.seg_len_src_placeholder: inference.load_data(test_seg_len_src_file),
-        infer_model.batch_size_placeholder: hparams.infer_batch_size,
-    }
+    if 'segment' in hparams.src_embed_type:
+        test_infer_iterator_feed_dict = {
+            infer_model.src_placeholder: inference.load_data(test_src_file),
+            infer_model.seg_src_placeholder: inference.load_data(test_seg_src_file),
+            infer_model.seg_len_src_placeholder: inference.load_data(test_seg_len_src_file),
+            infer_model.batch_size_placeholder: hparams.infer_batch_size,
+        }
+    else:
+        test_infer_iterator_feed_dict = {
+            infer_model.src_placeholder: inference.load_data(test_src_file),
+            infer_model.batch_size_placeholder: hparams.infer_batch_size,
+        }
     test_scores = _external_eval(
         loaded_infer_model,
         global_step,
@@ -291,9 +303,13 @@ def train(hparams, scope=None, target_session=""):
   dev_seg_len_src_file = "%s.%s_seg_len" % (hparams.dev_prefix, hparams.src)
   dev_tgt_file = "%s.%s" % (hparams.dev_prefix, hparams.tgt)
   sample_src_data = inference.load_data(dev_src_file)
-  sample_seg_src_data = inference.load_data(dev_seg_src_file)
-  sample_seg_len_src_data = inference.load_data(dev_seg_len_src_file)
   sample_tgt_data = inference.load_data(dev_tgt_file)
+  if 'segment' in hparams.src_embed_type:
+      sample_seg_len_src_data = inference.load_data(dev_seg_len_src_file)
+      sample_seg_src_data = inference.load_data(dev_seg_src_file)
+  else:
+      sample_seg_len_src_data = None
+      sample_seg_src_data = None
 
   summary_name = "train_log"
   model_dir = hparams.out_dir

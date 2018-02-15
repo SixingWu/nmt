@@ -71,13 +71,22 @@ def _decode_inference_indices(model, sess, output_infer,
 
 def load_data(inference_input_file, hparams=None):
   """Load inference data."""
-  with codecs.getreader("utf-8")(
-      tf.gfile.GFile(inference_input_file, mode="rb")) as f:
-    inference_data = f.read().splitlines()
+  try:
+      with codecs.getreader("utf-8")(
+          tf.gfile.GFile(inference_input_file, mode="rb")) as f:
+        inference_data = f.read().splitlines()
 
-  if hparams and hparams.inference_indices:
-    inference_data = [inference_data[i] for i in hparams.inference_indices]
-  return inference_data
+      if hparams and hparams.inference_indices:
+        inference_data = [inference_data[i] for i in hparams.inference_indices]
+      return inference_data
+  except Exception as e:
+      #TODO Debug
+      if (inference_input_file is None or inference_input_file[-4:]=='_seg' or inference_input_file[-7:]=='seg_len'):
+          utils.print_out('A wrong segment load: %s' % inference_input_file)
+          return None
+      else:
+          raise e
+
 
 def load_seg_data(inference_input_file, hparams=None):
     """Load inference data."""
