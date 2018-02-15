@@ -109,6 +109,8 @@ def create_train_model(
         seg_tgt_dataset = None
         seg_len_src_dataset = None
         seg_len_tgt_dataset = None
+        seg_src_vocab_table = None
+        seg_tgt_vocab_table = None
 
         seg_len = None
     skip_count_placeholder = tf.placeholder(shape=(), dtype=tf.int64)
@@ -204,6 +206,8 @@ def create_eval_model(model_creator, hparams, scope=None, extra_args=None):
         seg_tgt_file = None
         seg_len_src_file = None
         seg_len_tgt_file = None
+        seg_src_vocab_table = None
+        seg_tgt_vocab_table = None
 
         seg_len = -1
 
@@ -293,6 +297,7 @@ def create_infer_model(model_creator, hparams, scope=None, extra_args=None):
         seg_src_dataset = None
         seg_len_src_dataset = None
         seg_len = -1
+        seg_src_vocab_table = None
 
     iterator = iterator_utils.get_infer_iterator(
         src_dataset,
