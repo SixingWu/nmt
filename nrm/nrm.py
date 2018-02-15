@@ -37,9 +37,15 @@ FLAGS = None
 
 
 def add_arguments(parser):
+
+
   """Build ArgumentParser."""
   parser.register("type", "bool", lambda v: v.lower() == "true")
 
+
+  # Segment
+  parser.add_argument("--seg_len", type=int, default=8,
+                      help="seg_len")
   # training stop_windows
   parser.add_argument("--debug", type="bool", nargs="?", const=True,
                       default=True,
@@ -308,7 +314,7 @@ def create_hparams(flags):
 
 
       # seg embedding
-      seg_len=8,
+      seg_len=flags.seg_len,
       seg_separator='\t',
       seg_inter_separator = ' ',
       seg_embed_mode='separate',
