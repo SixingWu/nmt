@@ -590,7 +590,7 @@ class Model(BaseModel):
           seg_source = iterator.seg_source
           encoder_emb_inp = tf.nn.embedding_lookup(self.embedding_encoder, seg_source)
 
-      elif hparams.src_embed_type == 'rnn_segment':
+      elif 'rnn_segment' in hparams.src_embed_type:
           with tf.variable_scope('rnn_segment_embedding'):
               # [batch, seq_len, seg_len]
               seg_source = iterator.seg_source
@@ -641,8 +641,19 @@ class Model(BaseModel):
                   encoder_emb_inp = tf.reshape(encoder_emb_inp, [_batch_size, _seq_len, hparams.embed_dim])
                   #[max_time, batch_size, embedding]
                   encoder_emb_inp = tf.transpose(encoder_emb_inp, perm=[1,0,2])
-                  encoder_emb_inp += tf.nn.embedding_lookup(
-                  self.embedding_encoder, source)
+
+                  #merge
+                  if hparams.src_embed_type[0:3] == 'rnn':
+                    # Simply add two embeddings
+                    encoder_emb_inp += tf.nn.embedding_lookup(self.embedding_encoder, source)
+                  elif hparams.src_embed_type[0:3] == 'gtf':
+                      #gtf : Gate function
+                    encoder_emb_inp = embedding_helper.simple_3D_concat_gate_function(encoder_emb_inp,
+                                                                                   tf.nn.embedding_lookup(self.embedding_encoder, source),
+                                                                                   hparams.embed_dim)
+                  else:
+                      raise  Exception('Unknown hparams.src_embed_type : %s' % hparams.src_embed_type)
+
 
 
 

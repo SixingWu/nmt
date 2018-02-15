@@ -118,9 +118,29 @@ def build_rnn_encoder(encoder_param):
     return encoder_outputs, encoder_state
 
 def projection(input, input_dim, output_dim, activation=None):
+    """
+    Projection function
+    :param input:
+    :param input_dim:
+    :param output_dim:
+    :param activation:
+    :return:
+    """
     W = tf.get_variable(name='embedding_projection_w', shape=[input_dim, output_dim])
     b = tf.get_variable(name='embedding_bias_w', shape=[output_dim])
     tmp = tf.matmul(input,W) + b
     if activation is not None:
         tmp = activation(tmp)
     return tmp
+
+def simple_3D_concat_gate_function(input_a, input_b, dimension):
+    shapes = tf.unstack(tf.shape(input_a))
+    d1 = shapes[0]
+    d2 = shapes[1]
+    W = tf.get_variable(name='simple_concat_gate_w', shape=[dimension*2, dimension])
+    b = tf.get_variable(name='simple_concat_gate_b', shape=[dimension])
+    concatenation = tf.reshape(tf.concat([input_a,input_b], axis=-1), [-1,2*dimension])
+    gate = tf.sigmoid(tf.matmul(concatenation, W) + b)
+    gate = tf.reshape(gate,[d1, d2, dimension])
+    output = input_a * gate + input_b * (1.0 - gate)
+    return output
