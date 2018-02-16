@@ -494,7 +494,7 @@ def train(hparams, scope=None, target_session=""):
   result_summary, _, dev_scores, test_scores, dev_ppl, test_ppl = run_full_eval(
       model_dir, infer_model, infer_sess,
       eval_model, eval_sess, hparams,
-      summary_writer, sample_src_data,
+      summary_writer, sample_src_data,sample_seg_src_data,sample_seg_len_src_data,
       sample_tgt_data)
   utils.print_out(
       "# Final, step %d lr %g "

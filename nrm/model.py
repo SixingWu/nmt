@@ -31,6 +31,7 @@ from .utils import iterator_utils
 from .utils import misc_utils as utils
 from . import embedding_helper
 from .embedding_helper import EncoderParam
+from .embedding_helper import CNNEncoderParam
 
 utils.check_tensorflow_version()
 
@@ -586,9 +587,73 @@ class Model(BaseModel):
           # Look up embedding, emp_inp: [max_time, batch_size, embedding]
           encoder_emb_inp = tf.nn.embedding_lookup(
               self.embedding_encoder, source)
-      elif hparams.src_embed_type == 'avg_segment':
-          seg_source = iterator.seg_source
-          encoder_emb_inp = tf.nn.embedding_lookup(self.embedding_encoder, seg_source)
+      elif 'cnn_segment' in hparams.src_embed_type:
+          # collections.namedtuple("CNNEncoderParam", ("max_time", "batch_size", "embed_dim",
+          #                                            "min_windows", "max_windows", "filters_per_windows",
+          #                                            "width_strides",
+          #                                            "high_way_type", "high_way_layers", "source_sequence_length",
+          #                                            "residual_cnn_layer", "residual_cnn_layer_type", "name"))):
+          with tf.variable_scope('cnn_segment_embedding'):
+              # [batch, seq_len, seg_len]
+              seg_source = iterator.seg_source
+              # [batch, seq_len]
+              seg_len_source = iterator.seg_src_lens
+              # [batch, seq_len, seg_len, embedding]
+              encoder_emb_inp = tf.nn.embedding_lookup(self.seg_embedding_encoder, seg_source)
+
+              _batch_size = tf.shape(encoder_emb_inp)[0]
+              _seq_len = tf.shape(encoder_emb_inp)[1]
+              # flattern to [batch_size*seq_len,seg_len,embed]
+              encoder_emb_inp = tf.reshape(encoder_emb_inp,
+                                           [_batch_size * _seq_len, hparams.seg_len, hparams.seg_embed_dim])
+              encoder_emb_inp=tf.transpose(encoder_emb_inp,perm=[1,0,2] )
+              flattern_sequence_length = tf.reshape(seg_len_source, [-1])
+              with tf.variable_scope('cnn_word_embedding_encoder'):
+                  word_encoder = CNNEncoderParam(
+                      max_time=hparams.seg_len,
+                      batch_size=_batch_size * _seq_len,
+                      embed_dim=hparams.seg_embed_dim,
+                      min_windows=2,
+                      max_windows=5,
+                      filters_per_windows=200,
+                      width_strides=1,
+                      high_way_type='uniform',
+                      high_way_layers=2,
+                      name='cnn_encoder',
+
+                  )
+                  cnn_output,filter_num = embedding_helper.build_cnn_encoder(encoder_emb_inp, word_encoder)
+                  # TODO Bug了，这里的CNN Encoder并不收缩维度
+                  print("debug" + str(cnn_output))
+                  # [batch_size seq_len, embed]
+                  encoder_emb_inp = cnn_output
+                  encoder_emb_inp = embedding_helper.projection(encoder_emb_inp, filter_num,
+                                                                hparams.embed_dim)
+                  encoder_emb_inp = tf.reshape(encoder_emb_inp, [_batch_size, _seq_len, hparams.embed_dim])
+                  # [max_time, batch_size, embedding]
+                  encoder_emb_inp = tf.transpose(encoder_emb_inp, perm=[1, 0, 2])
+
+                  # merge
+                  if hparams.src_embed_type[0:3] == 'cnn':
+                      # Simply add two embeddings
+                      encoder_emb_inp += tf.nn.embedding_lookup(self.embedding_encoder, source)
+                  elif hparams.src_embed_type[0:3] == 'gtf':
+                      # gtf : Gate function
+                      encoder_emb_inp = embedding_helper.simple_3D_concat_gate_function(encoder_emb_inp,
+                                                                                        tf.nn.embedding_lookup(
+                                                                                            self.embedding_encoder,
+                                                                                            source),
+                                                                                        hparams.embed_dim)
+                  elif hparams.src_embed_type[0:3] == 'wtf':
+                      # gtf : Gate function
+                      encoder_emb_inp = embedding_helper.simple_3D_concat_weighted_function(encoder_emb_inp,
+                                                                                            tf.nn.embedding_lookup(
+                                                                                                self.embedding_encoder,
+                                                                                                source),
+                                                                                            hparams.embed_dim)
+                  else:
+                      raise Exception('Unknown hparams.src_embed_type : %s' % hparams.src_embed_type)
+
 
       elif 'rnn_segment' in hparams.src_embed_type:
           with tf.variable_scope('rnn_segment_embedding'):
@@ -598,17 +663,6 @@ class Model(BaseModel):
               seg_len_source = iterator.seg_src_lens
               # [batch, seq_len, seg_len, embedding]
               encoder_emb_inp = tf.nn.embedding_lookup(self.seg_embedding_encoder, seg_source)
-              def sub_process(x):
-                ##x:[seq_len, seg_len, embedding]
-                x = tf.transpose(x, perm=[0,2,1])
-                x = tf.reduce_mean(x, axis=-1,)
-                # [seq_len, embedding]
-                return x
-
-
-              # [batch,seq_len,embedding]
-              # encoder_emb_inp = tf.map_fn(sub_process,encoder_emb_inp)
-              # encoder_emb_inp = tf.transpose(encoder_emb_inp, perm=[1, 0, 2])
 
               _batch_size = tf.shape(encoder_emb_inp)[0]
               _seq_len = tf.shape(encoder_emb_inp)[1]
@@ -649,6 +703,11 @@ class Model(BaseModel):
                   elif hparams.src_embed_type[0:3] == 'gtf':
                       #gtf : Gate function
                     encoder_emb_inp = embedding_helper.simple_3D_concat_gate_function(encoder_emb_inp,
+                                                                                   tf.nn.embedding_lookup(self.embedding_encoder, source),
+                                                                                   hparams.embed_dim)
+                  elif hparams.src_embed_type[0:3] == 'wtf':
+                      #gtf : Gate function
+                    encoder_emb_inp = embedding_helper.simple_3D_concat_weighted_function(encoder_emb_inp,
                                                                                    tf.nn.embedding_lookup(self.embedding_encoder, source),
                                                                                    hparams.embed_dim)
                   else:

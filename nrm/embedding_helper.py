@@ -10,6 +10,12 @@ class EncoderParam(
                                           "single_cell_fn","num_units","name"))):
   pass
 
+class CNNEncoderParam(
+    collections.namedtuple("CNNEncoderParam", ("max_time", "batch_size", "embed_dim",
+                                            "min_windows","max_windows","filters_per_windows","width_strides",
+                                            "high_way_type","high_way_layers","name"))):
+  pass
+
 
 
 def _build_encoder_cell(encoder_param, num_layers, num_residual_layers,
@@ -67,6 +73,107 @@ def _build_bidirectional_rnn(inputs, sequence_length,
         swap_memory=True)
 
     return tf.concat(bi_outputs, -1), bi_state
+
+
+
+"""
+
+My functions
+"""
+
+
+def highway(x, size, activation, carry_bias=-1.0, name='highway'):
+    with tf.variable_scope(name):
+        W_T = tf.Variable(tf.truncated_normal([size, size], stddev=0.1), name="weight_transform")
+        b_T = tf.Variable(tf.constant(carry_bias, shape=[size]), name="bias_transform")
+        W = tf.Variable(tf.truncated_normal([size, size], stddev=0.1), name="weight")
+        b = tf.Variable(tf.constant(0.1, shape=[size]), name="bias")
+        T = tf.sigmoid(tf.matmul(x, W_T) + b_T, name="transform_gate")
+        H = activation(tf.matmul(x, W) + b, name="activation")
+        C = tf.subtract(1.0, T, name="carry_gate")
+        y = tf.add(tf.multiply(H, T), tf.multiply(x, C), "y")
+        return y
+
+
+def build_cnn_encoder(embedding_emb_inp, cnn_encoder_param):
+
+    # TODO 检查输入的格式，以及原来attention encoder里的格式，时间
+    # Parameters
+    max_time = cnn_encoder_param.max_time
+    batch_size = cnn_encoder_param.batch_size
+    embed_dim = cnn_encoder_param.embed_dim
+
+    min_windows = cnn_encoder_param.min_windows
+    max_windows = cnn_encoder_param.max_windows
+    filters_per_windows = cnn_encoder_param.filters_per_windows
+
+
+    high_way_type = cnn_encoder_param.high_way_type
+    high_way_layers = cnn_encoder_param.high_way_layers
+
+
+
+
+
+
+
+    #input
+    embedding_inputs = embedding_emb_inp # [max_time, batch_size, embed_dim]
+    conv_inputs = tf.reshape(embedding_inputs, [max_time, batch_size, embed_dim, 1])
+    conv_inputs = tf.transpose(conv_inputs, perm=[1, 2, 0, 3])
+
+    # CNN layer
+    conv_outputs = []
+    filter_nums = (max_windows - min_windows + 1) * filters_per_windows
+    print('debug' + str(conv_inputs))
+    for width in range(min_windows, max_windows + 1):
+        filter = tf.get_variable("filter_%d" % ( width ), shape=[embed_dim, width, 1, filters_per_windows])
+        strides = [1, embed_dim, 1, 1]
+        # [batch, height = 1, width = max_time, channels = filters_per_windows]
+        conv_out = tf.nn.relu(tf.nn.conv2d(conv_inputs, filter, strides, padding='SAME'))
+        conv_outputs.append(conv_out)
+
+    # max_pooling over time
+    pool_outputs = []
+    width_strides = max_time
+    strides = [1, 1, width_strides, 1]
+    segment_len = tf.cast(tf.ceil(max_time / width_strides), tf.int32)
+    for conv_output in conv_outputs:
+
+        print('debug'+str(conv_output))
+        pool_out = tf.nn.max_pool(conv_output, [1, 1, width_strides, 1], strides, padding='SAME')
+        # [batch, height = 1, width = segment_len, channels = filters_per_windows]
+        print('debug'+str(pool_out))
+
+        pool_out = tf.reshape(pool_out, [batch_size, 1, filters_per_windows])
+        pool_outputs.append(pool_out)
+
+    # Highway network
+    if high_way_layers > 0:
+        if high_way_type == 'uniform':
+            stacked_results = tf.concat(pool_outputs, axis=-1)
+            high_way_tmp = tf.reshape(stacked_results, [-1, filter_nums])
+            for i in range(high_way_layers):
+                high_way_tmp = highway(high_way_tmp, filter_nums, tf.nn.relu, name='highway_%d' % i)
+            highway_outputs = tf.reshape(high_way_tmp, [batch_size, filter_nums])
+        elif high_way_type == 'per_filter':
+            highway_results = []
+            for w, pool_result in enumerate(pool_outputs):
+                pool_highway_tmp = tf.reshape(pool_result, [-1, filters_per_windows])
+                for i in range(high_way_layers):
+                    pool_highway_tmp = highway(pool_highway_tmp, filters_per_windows, tf.nn.relu,
+                                               name='highway_w%d_%d' % (w + min_windows, i))
+                highway_results.append(pool_highway_tmp)
+            stacked_results = tf.concat(highway_results, axis=-1)
+            highway_outputs = tf.reshape(stacked_results, [batch_size, filter_nums])
+    else:
+        highway_outputs = tf.concat(pool_outputs, axis=-1)
+
+
+
+    return highway_outputs,filter_nums
+
+
 
 def build_rnn_encoder(encoder_param):
     """
@@ -143,4 +250,16 @@ def simple_3D_concat_gate_function(input_a, input_b, dimension):
     gate = tf.sigmoid(tf.matmul(concatenation, W) + b)
     gate = tf.reshape(gate,[d1, d2, dimension])
     output = input_a * gate + input_b * (1.0 - gate)
+    return output
+
+def simple_3D_concat_weighted_function(input_a, input_b, dimension):
+    shapes = tf.unstack(tf.shape(input_a))
+    d1 = shapes[0]
+    d2 = shapes[1]
+    W = tf.get_variable(name='simple_concat_weight_w', shape=[dimension*2, 1])
+    b = tf.get_variable(name='simple_concat_weight_b', shape=[1])
+    concatenation = tf.reshape(tf.concat([input_a,input_b], axis=-1), [-1,2*dimension])
+    weight = tf.sigmoid(tf.matmul(concatenation, W) + b)
+    weight = tf.reshape(weight,[d1, d2, 1])
+    output = input_a * weight + input_b * (1.0 - weight)
     return output
