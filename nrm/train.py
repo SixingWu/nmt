@@ -468,7 +468,7 @@ def train(hparams, scope=None, target_session=""):
           os.path.join(out_dir, "translate.ckpt"),
           global_step=global_step)
       run_sample_decode(infer_model, infer_sess,
-                        model_dir, hparams, summary_writer, sample_src_data,
+                        model_dir, hparams, summary_writer, sample_src_data,sample_seg_src_data,sample_seg_len_src_data,
                         sample_tgt_data)
       dev_scores, test_scores, _ = run_external_eval(
           infer_model, infer_sess, model_dir,
