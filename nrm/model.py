@@ -260,8 +260,8 @@ class BaseModel(object):
                         num_partitions=hparams.num_embeddings_partitions,
                         src_vocab_file=hparams.src_vocab_file+'_seg',
                         tgt_vocab_file=hparams.tgt_vocab_file+'_seg',
-                        src_embed_file=None,
-                        tgt_embed_file=None,
+                        src_embed_file=hparams.seg_src_embed_file,
+                        tgt_embed_file=hparams.seg_tgt_embed_file,
                         scope=scope, ))
             else:
                 raise Exception('Unkown seg_embed_mode')

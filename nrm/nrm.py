@@ -523,15 +523,25 @@ def extend_hparams(hparams):
   # Pretrained Embeddings:
   hparams.add_hparam("src_embed_file", "")
   hparams.add_hparam("tgt_embed_file", "")
+  hparams.add_hparam("seg_src_embed_file", "")
+  hparams.add_hparam("seg_tgt_embed_file", "")
   if hparams.embed_prefix:
     src_embed_file = hparams.embed_prefix + "." + hparams.src
     tgt_embed_file = hparams.embed_prefix + "." + hparams.tgt
+    seg_src_embed_file = hparams.embed_prefix + "." + hparams.src+'_seg'
+    seg_tgt_embed_file = hparams.embed_prefix + "." + hparams.tgt+'_seg'
 
     if tf.gfile.Exists(src_embed_file):
       hparams.src_embed_file = src_embed_file
 
     if tf.gfile.Exists(tgt_embed_file):
       hparams.tgt_embed_file = tgt_embed_file
+
+    if tf.gfile.Exists(seg_src_embed_file):
+      hparams.seg_src_embed_file = seg_src_embed_file
+
+    if tf.gfile.Exists(seg_tgt_embed_file):
+      hparams.seg_tgt_embed_file = seg_tgt_embed_file
 
   # Check out_dir
   if not tf.gfile.Exists(hparams.out_dir):
