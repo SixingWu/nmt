@@ -319,7 +319,7 @@ def create_hparams(flags):
       seg_inter_separator = ' ',
       seg_embed_mode='separate',
       # 改了不一样
-      seg_embed_dim=128,
+      seg_embed_dim=160,
 
       # Early Stop
       debug=flags.debug,
