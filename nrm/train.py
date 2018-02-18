@@ -372,7 +372,8 @@ def train(hparams, scope=None, target_session=""):
       train_model.iterator.initializer,
       feed_dict={train_model.skip_count_placeholder: skip_count})
 
-
+  check_stop_status(hparams, global_step)
+  utils.save_hparams(out_dir, hparams)
 
   while (hparams.dev_stop_flag is False) and global_step < num_train_steps:
 
