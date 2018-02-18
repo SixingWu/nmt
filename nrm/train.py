@@ -269,6 +269,7 @@ def check_stop_status(hparams, global_step):
                 dev_stop_flag = True
                 setattr(hparams,'dev_stop_flag', dev_stop_flag)
                 utils.print_out('The training will be automatically stopped, because the ppl on dev is increasing in two epochs')
+
     return dev_stop_flag
 
 def train(hparams, scope=None, target_session=""):
@@ -422,6 +423,7 @@ def train(hparams, scope=None, target_session=""):
       if hparams.debug:
           utils.print_out('Epoch Dev PPLs: \n #####\n %s \n#####\n' % (str(score_history[-100:])))
       check_stop_status(hparams, global_step)
+      utils.save_hparams(out_dir, hparams)
 
       continue
 
@@ -479,10 +481,12 @@ def train(hparams, scope=None, target_session=""):
       score_history = getattr(hparams, 'dev_score_history')
       score_history.append(dev_ppl)
       setattr(hparams, 'dev_score_history', score_history)
-      utils.save_hparams(out_dir, hparams)
+
       if hparams.debug:
           utils.print_out('Epoch Dev PPLs: \n #####\n %s \n#####\n' % (str(score_history[-100:])))
       check_stop_status(hparams, global_step)
+      utils.save_hparams(out_dir, hparams)
+
 
   utils.print_out('Model has been successfully stopped')
   # Done training
