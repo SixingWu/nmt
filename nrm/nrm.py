@@ -396,6 +396,7 @@ def create_hparams(flags):
       # Vocab
       sos=flags.sos if flags.sos else vocab_utils.SOS,
       eos=flags.eos if flags.eos else vocab_utils.EOS,
+      unk='<unk>',
       subword_option=flags.subword_option,
       check_special_token=flags.check_special_token,
 

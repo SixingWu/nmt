@@ -132,6 +132,7 @@ def create_train_model(
         batch_size=hparams.batch_size,
         sos=hparams.sos,
         eos=hparams.eos,
+        unk=hparams.unk,
         random_seed=hparams.random_seed,
         num_buckets=hparams.num_buckets,
         src_max_len=hparams.src_max_len,
@@ -220,6 +221,7 @@ def create_eval_model(model_creator, hparams, scope=None, extra_args=None):
         hparams.batch_size,
         sos=hparams.sos,
         eos=hparams.eos,
+        unk=hparams.unk,
         seg_src_vocab_table=seg_src_vocab_table,
         seg_tgt_vocab_table=seg_tgt_vocab_table,
         seg_len_src_dataset=seg_len_src_dataset,
@@ -310,6 +312,7 @@ def create_infer_model(model_creator, hparams, scope=None, extra_args=None):
         seg_separator=hparams.seg_separator,
         seg_inter_separator=hparams.seg_inter_separator,
         eos=hparams.eos,
+        unk=hparams.unk,
         src_max_len=hparams.src_max_len_infer)
     model = model_creator(
         hparams,

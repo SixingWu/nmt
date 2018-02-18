@@ -518,7 +518,7 @@ def train(hparams, scope=None, target_session=""):
         os.path.join(best_model_dir, summary_name), infer_model.graph)
     result_summary, best_global_step, _, _, _, _ = run_full_eval(
         best_model_dir, infer_model, infer_sess, eval_model, eval_sess, hparams,
-        summary_writer, sample_src_data, sample_tgt_data)
+        summary_writer, sample_src_data,sample_seg_src_data,sample_seg_len_src_data, sample_tgt_data)
     utils.print_out("# Best %s, step %d "
                     "step-time %.2f wps %.2fK, %s, %s" %
                     (metric, best_global_step, avg_step_time, speed,

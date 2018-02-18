@@ -33,12 +33,22 @@ __all__ = ["evaluate"]
 
 
 
-
 def evaluate(ref_file, trans_file, metric, subword_option=None):
   """Pick a metric and evaluate depending on task."""
   # BLEU scores for translation task
+  if '@' in metric.lower():
+    pos = metric.lower().index('@')
+    if subword_option is None:
+      subword_option = 'None'
+    subword_option += metric[pos:]
+    metric = metric[0:pos]
+
   if metric.lower() == "bleu":
     evaluation_score = _bleu(ref_file, trans_file,
+                             subword_option=subword_option)
+  elif len(metric.lower()) > 4 and metric.lower()[0:4]=='bleu':
+    max_order = int(metric.lower()[5:])
+    evaluation_score = _bleu(ref_file, trans_file,max_order=max_order,
                              subword_option=subword_option)
   # ROUGE scores for summarization tasks
   elif metric.lower() == "rouge":
@@ -59,18 +69,29 @@ def evaluate(ref_file, trans_file, metric, subword_option=None):
 def _clean(sentence, subword_option):
   """Clean and handle BPE or SPM outputs."""
   sentence = sentence.strip()
-
+  if subword_option is not None and '@' in subword_option:
+    subword_option_0 = subword_option.split('@')[0]
+    subword_option_1 = subword_option.split('@')[1]
+  else:
+    subword_option_0 = None
+    subword_option_1 = None
   # BPE
-  if subword_option == "bpe":
+  if subword_option_0 == "bpe":
     sentence = re.sub("@@ ", "", sentence)
 
   # SPM
-  elif subword_option == "spm":
+  elif subword_option_0 == "spm":
     sentence = u"".join(sentence.split()).replace(u"\u2581", u" ").lstrip()
 
   # speical for chinese
-  sentence = sentence.replace(" ","")
-  sentence = " ".join(sentence)
+  if subword_option_1 == 'char':
+    sentence = sentence.replace("@@", "")
+    sentence = sentence.replace(" ","")
+    sentence = " ".join(sentence)
+  elif subword_option_1 == 'hybrid':
+    sentence = sentence.replace(" @@ ", "")
+    sentence = sentence.replace("@@ ", "")
+    sentence = sentence.replace(" @@", "")
   return sentence
 
 
@@ -200,16 +221,15 @@ def _moses_bleu(multi_bleu_script, tgt_test, trans_file, subword_option=None):
   return bleu_score
 
 if __name__ == "__main__":
-  ref_file = sys.argv[1]
-  trans_file = sys.argv[2]
-  subword = sys.argv[3]
+  ref_file = "/Users/mebiuw/PycharmProjects/nmt/nrm/utils/test_ref.txt"
+  trans_file = "/Users/mebiuw/PycharmProjects/nmt/nrm/utils/test_trans.txt"
+  subword = None
 
-  if subword == 'bpe':
-    subword='bpe'
-  else:
-    subword=None
   print('res file: %s' % ref_file)
   print('trans_file:%s' % trans_file)
-  for metric in ['bleu','rouge','accuracy','word_accuracy']:
+  for metric in ['bleu','bleu-1','bleu-2','bleu-3','bleu-4','rouge','accuracy','word_accuracy']:
     score = evaluate(ref_file,trans_file,metric,subword_option=subword)
+    print('%s\t%s' % (metric, score))
+  for metric in ['bleu','bleu-1','bleu-2','bleu-3','bleu-4','rouge','accuracy','word_accuracy']:
+    score = evaluate(ref_file,trans_file,metric+'@char',subword_option=subword)
     print('%s\t%s' % (metric, score))

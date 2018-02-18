@@ -637,6 +637,11 @@ class Model(BaseModel):
                   if hparams.src_embed_type[0:3] == 'cnn':
                       # Simply add two embeddings
                       encoder_emb_inp += tf.nn.embedding_lookup(self.embedding_encoder, source)
+                  elif hparams.src_embed_type[0:3] == 'lfw':
+                      unknown_mask = tf.transpose(iterator.unknown_src,perm=[1,0])
+                      utils.debug_tensor(unknown_mask,'unknown mask')
+                      unknown_mask = tf.cast(tf.reshape(unknown_mask,[_seq_len,_batch_size,1]),tf.float32)
+                      encoder_emb_inp = encoder_emb_inp * unknown_mask + tf.nn.embedding_lookup(self.embedding_encoder, source) * (1.0 - unknown_mask)
                   elif hparams.src_embed_type[0:3] == 'gtf':
                       # gtf : Gate function
                       encoder_emb_inp = embedding_helper.simple_3D_concat_gate_function(encoder_emb_inp,
@@ -700,6 +705,10 @@ class Model(BaseModel):
                   if hparams.src_embed_type[0:3] == 'rnn':
                     # Simply add two embeddings
                     encoder_emb_inp += tf.nn.embedding_lookup(self.embedding_encoder, source)
+                  elif hparams.src_embed_type[0:3] == 'lfw':
+                    encoder_emb_inp = encoder_emb_inp * iterator.unknown_src + tf.nn.embedding_lookup(
+                        self.embedding_encoder, source) * (1.0 - iterator.unknown_src)
+
                   elif hparams.src_embed_type[0:3] == 'gtf':
                       #gtf : Gate function
                     encoder_emb_inp = embedding_helper.simple_3D_concat_gate_function(encoder_emb_inp,
