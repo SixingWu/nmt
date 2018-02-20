@@ -642,6 +642,18 @@ class Model(BaseModel):
                       utils.debug_tensor(unknown_mask,'unknown mask')
                       unknown_mask = tf.cast(tf.reshape(unknown_mask,[_seq_len,_batch_size,1]),tf.float32)
                       encoder_emb_inp = encoder_emb_inp * unknown_mask + tf.nn.embedding_lookup(self.embedding_encoder, source) * (1.0 - unknown_mask)
+                  elif hparams.src_embed_type[0:3] == 'dlf':
+                      unknown_mask = tf.transpose(iterator.unknown_src, perm=[1, 0])
+                      utils.debug_tensor(unknown_mask, 'unknown mask')
+                      unknown_mask = tf.cast(tf.reshape(unknown_mask, [_seq_len, _batch_size, 1]), tf.float32)
+                      encoder_emb_inp = embedding_helper.simple_3D_concat_mask_weighted_function(encoder_emb_inp,
+                                                                                                 unknown_mask,
+                                                                                            tf.nn.embedding_lookup(
+                                                                                                self.embedding_encoder,
+                                                                                                source),
+                                                                                            hparams.embed_dim)
+
+
                   elif hparams.src_embed_type[0:3] == 'gtf':
                       # gtf : Gate function
                       encoder_emb_inp = embedding_helper.simple_3D_concat_gate_function(encoder_emb_inp,

@@ -263,3 +263,25 @@ def simple_3D_concat_weighted_function(input_a, input_b, dimension):
     weight = tf.reshape(weight,[d1, d2, 1])
     output = input_a * weight + input_b * (1.0 - weight)
     return output
+
+def simple_3D_concat_mask_weighted_function(input_a, input_b, unknown_mask, dimension):
+    """
+
+    :param input_a:  charCNN
+    :param input_b:  WordEmbedding
+    :param unknown_mask:
+    :param dimension:
+    :return:
+    """
+    shapes = tf.unstack(tf.shape(input_a))
+    d1 = shapes[0]
+    d2 = shapes[1]
+    W = tf.get_variable(name='simple_concat_weight_w', shape=[dimension*2, 1])
+    b = tf.get_variable(name='simple_concat_weight_b', shape=[1])
+    concatenation = tf.reshape(tf.concat([input_a,input_b], axis=-1), [-1,2*dimension])
+    weight = tf.sigmoid(tf.matmul(concatenation, W) + b)
+
+    weight = tf.maximum(tf.reshape(weight,[d1, d2, 1]) + unknown_mask, 1.0)
+    output = input_a * weight + input_b * (1.0 - weight)
+
+    return output
