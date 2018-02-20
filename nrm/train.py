@@ -375,6 +375,18 @@ def train(hparams, scope=None, target_session=""):
   check_stop_status(hparams, global_step)
   utils.save_hparams(out_dir, hparams)
 
+
+  # TODO
+  # utils.print_out('# All trainable values:')
+  # trainable_values = tf.trainable_variables()
+  # trainable_parameters = 0
+  # for item in trainable_values:
+  #     utils.print_out(item)
+  #     count = reduce(lambda x,y : x*y, item.shape())
+  #     trainable_parameters += count
+  # utils.print_out('# Parameters: %d' % trainable_parameters)
+
+
   while (hparams.dev_stop_flag is False) and global_step < num_train_steps:
 
     ### Run a step ###
