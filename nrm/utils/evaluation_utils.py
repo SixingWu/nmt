@@ -88,6 +88,14 @@ def _clean(sentence, subword_option):
     sentence = sentence.replace("@@", "")
     sentence = sentence.replace(" ","")
     sentence = " ".join(sentence)
+  if subword_option_1 == 'char2char':
+    sentence = sentence.replace(" ", "")
+    sentence = sentence.replace("@@", "")
+    sentence = " ".join(sentence)
+  if subword_option_1 == 'char2word':
+    sentence = sentence.replace(" ", "")
+    sentence = sentence.replace("@@", " ")
+    # sentence = " ".join(sentence)
   elif subword_option_1 == 'hybrid':
     sentence = sentence.replace(" @@ ", "")
     sentence = sentence.replace("@@ ", "")
