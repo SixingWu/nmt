@@ -276,17 +276,19 @@ def create_infer_model(model_creator, hparams, scope=None, extra_args=None):
         tgt_vocab_file, default_value=vocab_utils.UNK)
 
     src_placeholder = tf.placeholder(shape=[None], dtype=tf.string)
-    seg_src_placeholder = tf.placeholder(shape=[None], dtype=tf.string)
-    seg_len_src_placeholder = tf.placeholder(shape=[None], dtype=tf.string)
     batch_size_placeholder = tf.placeholder(shape=[], dtype=tf.int64)
 
     src_dataset = tf.data.Dataset.from_tensor_slices(
         src_placeholder)
-    seg_src_dataset = tf.data.Dataset.from_tensor_slices(
-        seg_src_placeholder)
-    seg_len_src_dataset = tf.data.Dataset.from_tensor_slices(
-        seg_len_src_placeholder)
+
     if 'segment' in hparams.src_embed_type:
+        seg_src_placeholder = tf.placeholder(shape=[None], dtype=tf.string)
+        seg_len_src_placeholder = tf.placeholder(shape=[None], dtype=tf.string)
+        seg_src_dataset = tf.data.Dataset.from_tensor_slices(
+            seg_src_placeholder)
+        seg_len_src_dataset = tf.data.Dataset.from_tensor_slices(
+            seg_len_src_placeholder)
+        
         seg_src_vocab_file = hparams.src_vocab_file + '_seg'
         seg_tgt_vocab_file = hparams.tgt_vocab_file + '_seg'
         seg_src_vocab_table, seg_tgt_vocab_table = vocab_utils.create_seg_vocab_tables(
