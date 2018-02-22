@@ -288,7 +288,7 @@ def create_infer_model(model_creator, hparams, scope=None, extra_args=None):
             seg_src_placeholder)
         seg_len_src_dataset = tf.data.Dataset.from_tensor_slices(
             seg_len_src_placeholder)
-        
+
         seg_src_vocab_file = hparams.src_vocab_file + '_seg'
         seg_tgt_vocab_file = hparams.tgt_vocab_file + '_seg'
         seg_src_vocab_table, seg_tgt_vocab_table = vocab_utils.create_seg_vocab_tables(

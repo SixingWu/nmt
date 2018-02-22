@@ -148,12 +148,22 @@ def single_worker_inference(infer_model,
       graph=infer_model.graph, config=utils.get_config_proto()) as sess:
     loaded_infer_model = model_helper.load_model(
         infer_model.model, ckpt, sess, "infer")
+    if 'segment' in hparams.src_embed_type:
+        infer_iterator_feed_dict = {
+            infer_model.src_placeholder: load_data(inference_input_file),
+            infer_model.seg_src_placeholder: load_data(inference_input_file+'_seg'),
+            infer_model.seg_len_src_placeholder: load_data(inference_input_file+'_seg_len'),
+            infer_model.batch_size_placeholder: hparams.infer_batch_size,
+        }
+    else:
+        infer_iterator_feed_dict = {
+            infer_model.src_placeholder: load_data(inference_input_file),
+            infer_model.batch_size_placeholder: hparams.infer_batch_size,
+        }
     sess.run(
         infer_model.iterator.initializer,
-        feed_dict={
-            infer_model.src_placeholder: infer_data,
-            infer_model.batch_size_placeholder: hparams.infer_batch_size
-        })
+
+        feed_dict=infer_iterator_feed_dict)
     # Decode
     utils.print_out("# Start decoding")
     if hparams.inference_indices:

@@ -18,3 +18,15 @@ python3 -m nrm.nrm \
     --num_train_steps=1000000 \
     --metrics=bleu-2@hybrid,bleu-4@char,rouge,accuracy \
     --steps_per_stats=100 >> logs/hybrid2WN.txt
+
+
+python3 -m nrm.nrm \
+ --out_dir=models/hybrid_2W \
+ --inference_input_file=/ldev/tensorflow/nmt2/nmt/data/hybrid2/test.20000.message \
+ --inference_output_file=decoded/hybrid_2W_test.txt
+
+
+python3 -m nrm.nrm \
+ --out_dir=tmp/debug_seg\
+ --inference_input_file=nmt_data/tst2013 \
+ --inference_output_file=nmt_data/inferout
