@@ -298,6 +298,8 @@ def create_infer_model(model_creator, hparams, scope=None, extra_args=None):
         seg_len_src_dataset = seg_len_src_dataset
         seg_len = hparams.seg_len
     else:
+        seg_src_placeholder = None
+        seg_len_src_placeholder = None
         seg_src_dataset = None
         seg_len_src_dataset = None
         seg_len = -1
