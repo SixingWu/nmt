@@ -328,6 +328,7 @@ def create_infer_model(model_creator, hparams, scope=None, extra_args=None):
         scope=scope,
         extra_args=extra_args)
   return InferModel(
+
       graph=graph,
       model=model,
       src_placeholder=src_placeholder,
