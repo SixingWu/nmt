@@ -288,9 +288,11 @@ def simple_3D_concat_mask_weighted_function(input_a, input_b, unknown_mask, dime
     W = tf.get_variable(name='simple_concat_weight_w', shape=[dimension*2+1, 1])
     b = tf.get_variable(name='simple_concat_weight_b', shape=[1])
     if activation_for_source is not None:
+        utils.print_out('word_embedding+ RELU')
         input_b = activation_for_source(input_b)
     concatenation = tf.reshape(tf.concat([input_a,input_b,unknown_mask], axis=-1), [-1,2*dimension+1])
     weight = tf.sigmoid(tf.matmul(concatenation, W) + b)
+    weight = tf.reshape(weight, [d1, d2, 1])
     output = input_a * weight + input_b * (1.0 - weight)
 
     return output

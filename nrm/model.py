@@ -653,7 +653,6 @@ class Model(BaseModel):
                           activation = tf.nn.leaky_relu
                       unknown_mask = tf.cast(tf.reshape(unknown_mask, [_seq_len, _batch_size, 1]), tf.float32)
                       encoder_emb_inp = embedding_helper.simple_3D_concat_mask_weighted_function(encoder_emb_inp,
-
                                                                                             tf.nn.embedding_lookup(
                                                                                                 self.embedding_encoder,
                                                                                                 source),
