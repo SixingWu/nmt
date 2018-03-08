@@ -343,6 +343,7 @@ def create_hparams(flags):
       out_dir=flags.out_dir,
 
       # cnn encoder
+      charcnn_relu=flags.charcnn_relu,
       charcnn_min_window_size=flags.charcnn_min_window_size,
       charcnn_max_window_size=flags.charcnn_max_window_size,
       charcnn_high_way_layer=flags.charcnn_high_way_layer,
