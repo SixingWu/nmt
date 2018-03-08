@@ -11,7 +11,7 @@ class EncoderParam(
   pass
 
 class CNNEncoderParam(
-    collections.namedtuple("CNNEncoderParam", ("max_time", "batch_size", "embed_dim",
+    collections.namedtuple("CNNEncoderParam", ("max_time", "batch_size", "embed_dim","relu_type",
                                             "min_windows","max_windows","filters_per_windows","width_strides",
                                             "high_way_type","high_way_layers","name"))):
   pass
@@ -107,6 +107,8 @@ def build_cnn_encoder(embedding_emb_inp, cnn_encoder_param):
     max_windows = cnn_encoder_param.max_windows
     filters_per_windows = cnn_encoder_param.filters_per_windows
 
+    relu_type = cnn_encoder_param.relu_type
+
 
     high_way_type = cnn_encoder_param.high_way_type
     high_way_layers = cnn_encoder_param.high_way_layers
@@ -130,7 +132,10 @@ def build_cnn_encoder(embedding_emb_inp, cnn_encoder_param):
         filter = tf.get_variable("filter_%d" % ( width ), shape=[embed_dim, width, 1, filters_per_windows])
         strides = [1, embed_dim, 1, 1]
         # [batch, height = 1, width = max_time, channels = filters_per_windows]
-        conv_out = tf.nn.relu(tf.nn.conv2d(conv_inputs, filter, strides, padding='SAME'))
+        if relu_type == 'relu':
+            conv_out = tf.nn.relu(tf.nn.conv2d(conv_inputs, filter, strides, padding='SAME'))
+        elif relu_type == 'leaky':
+            conv_out = tf.nn.leaky_relu(tf.nn.conv2d(conv_inputs, filter, strides, padding='SAME'))
         conv_outputs.append(conv_out)
 
     # max_pooling over time
@@ -150,18 +155,22 @@ def build_cnn_encoder(embedding_emb_inp, cnn_encoder_param):
 
     # Highway network
     if high_way_layers > 0:
+        if relu_type == 'relu':
+            relu_func = tf.nn.relu
+        elif relu_type == 'leaky':
+            relu_func = tf.nn.leaky_relu
         if high_way_type == 'uniform':
             stacked_results = tf.concat(pool_outputs, axis=-1)
             high_way_tmp = tf.reshape(stacked_results, [-1, filter_nums])
             for i in range(high_way_layers):
-                high_way_tmp = highway(high_way_tmp, filter_nums, tf.nn.relu, name='highway_%d' % i)
+                high_way_tmp = highway(high_way_tmp, filter_nums, relu_func, name='highway_%d' % i)
             highway_outputs = tf.reshape(high_way_tmp, [batch_size, filter_nums])
         elif high_way_type == 'per_filter':
             highway_results = []
             for w, pool_result in enumerate(pool_outputs):
                 pool_highway_tmp = tf.reshape(pool_result, [-1, filters_per_windows])
                 for i in range(high_way_layers):
-                    pool_highway_tmp = highway(pool_highway_tmp, filters_per_windows, tf.nn.relu,
+                    pool_highway_tmp = highway(pool_highway_tmp, filters_per_windows, relu_func,
                                                name='highway_w%d_%d' % (w + min_windows, i))
                 highway_results.append(pool_highway_tmp)
             stacked_results = tf.concat(highway_results, axis=-1)
@@ -264,24 +273,24 @@ def simple_3D_concat_weighted_function(input_a, input_b, dimension):
     output = input_a * weight + input_b * (1.0 - weight)
     return output
 
-def simple_3D_concat_mask_weighted_function(input_a, input_b, unknown_mask, dimension):
+def simple_3D_concat_mask_weighted_function(input_a, input_b, unknown_mask, dimension,activation_for_source):
     """
 
-    :param input_a:  charCNN
-    :param input_b:  WordEmbedding
-    :param unknown_mask:
+    :param input_a:  charCNN [_seq_len, _batch_size, embed_size]
+    :param input_b:  WordEmbedding [_seq_len, _batch_size, embed_size]
+    :param unknown_mask: [_seq_len, _batch_size, 1]
     :param dimension:
     :return:
     """
     shapes = tf.unstack(tf.shape(input_a))
     d1 = shapes[0]
     d2 = shapes[1]
-    W = tf.get_variable(name='simple_concat_weight_w', shape=[dimension*2, 1])
+    W = tf.get_variable(name='simple_concat_weight_w', shape=[dimension*2+1, 1])
     b = tf.get_variable(name='simple_concat_weight_b', shape=[1])
-    concatenation = tf.reshape(tf.concat([input_a,input_b], axis=-1), [-1,2*dimension])
+    if activation_for_source is not None:
+        input_b = activation_for_source(input_b)
+    concatenation = tf.reshape(tf.concat([input_a,input_b,unknown_mask], axis=-1), [-1,2*dimension+1])
     weight = tf.sigmoid(tf.matmul(concatenation, W) + b)
-
-    weight = tf.maximum(tf.reshape(weight,[d1, d2, 1]) + unknown_mask, 1.0)
     output = input_a * weight + input_b * (1.0 - weight)
 
     return output

@@ -567,7 +567,7 @@ class Model(BaseModel):
 
 
   def _build_encoder(self, hparams):
-    """Build an encoder."""
+    """Build an encoder.   TODO bug CNN Encoder会导致全部正值"""
     utils.print_out("utilizing the basic model to build encoder")
     #TODO 增加对输入Embedding的处理方法 [1] raw_embedding, [2] cnn_per_word_embedding
     num_layers = hparams.num_layers
@@ -613,13 +613,14 @@ class Model(BaseModel):
                       max_time=hparams.seg_len,
                       batch_size=_batch_size * _seq_len,
                       embed_dim=hparams.seg_embed_dim,
-                      min_windows=2,
-                      max_windows=5,
+                      min_windows=hparams.charcnn_min_window_size,
+                      max_windows=hparams.charcnn_max_window_size,
                       filters_per_windows=200,
                       width_strides=1,
-                      high_way_type='uniform',
-                      high_way_layers=2,
+                      high_way_type=hparams.charcnn_high_way_type,
+                      high_way_layers=hparams.charcnn_high_way_layer,
                       name='cnn_encoder',
+                      relu_type=hparams.charcnn_relu,
 
                   )
                   cnn_output,filter_num = embedding_helper.build_cnn_encoder(encoder_emb_inp, word_encoder)
@@ -643,8 +644,13 @@ class Model(BaseModel):
                       unknown_mask = tf.cast(tf.reshape(unknown_mask,[_seq_len,_batch_size,1]),tf.float32)
                       encoder_emb_inp = encoder_emb_inp * unknown_mask + tf.nn.embedding_lookup(self.embedding_encoder, source) * (1.0 - unknown_mask)
                   elif hparams.src_embed_type[0:3] == 'dlf':
+                      # 考虑到了mask的属性的 以及二者变成正值
                       unknown_mask = tf.transpose(iterator.unknown_src, perm=[1, 0])
-                      utils.debug_tensor(unknown_mask, 'unknown mask')
+                      activation = None
+                      if hparams.charcnn_relu == 'relu':
+                          activation = tf.nn.relu
+                      elif hparams.charcnn_relu == 'leaky':
+                          activation = tf.nn.leaky_relu
                       unknown_mask = tf.cast(tf.reshape(unknown_mask, [_seq_len, _batch_size, 1]), tf.float32)
                       encoder_emb_inp = embedding_helper.simple_3D_concat_mask_weighted_function(encoder_emb_inp,
 
@@ -652,7 +658,7 @@ class Model(BaseModel):
                                                                                                 self.embedding_encoder,
                                                                                                 source),
                                                                                                  unknown_mask,
-                                                                                            hparams.embed_dim)
+                                                                                            hparams.embed_dim,activation)
 
 
                   elif hparams.src_embed_type[0:3] == 'gtf':
