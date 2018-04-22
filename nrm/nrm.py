@@ -35,59 +35,47 @@ utils.check_tensorflow_version()
 
 FLAGS = None
 
-
 def add_arguments(parser):
-
 
   """Build ArgumentParser."""
   parser.register("type", "bool", lambda v: v.lower() == "true")
 
-
-  # Segment
-  parser.add_argument("--seg_len", type=int, default=8,
-                      help="seg_len")
-  # training stop_windows
+  # Debug
   parser.add_argument("--debug", type="bool", nargs="?", const=True,
                       default=True,
                       help="Debug Mode")
+
+  # Train & Test
   # TODO 在eval当中不能为FAlse
   parser.add_argument("--eval_test", type="bool", nargs="?", const=True,
                       default=True,
                       help="Whether to evaluate test set on external_process")
 
-  parser.add_argument("--embedding_model", type=str, default="default", help="""\
-        rnn | cnn| bahdanau | normed_bahdanau or set to "" 
-        """)
-  parser.add_argument("--width_strides", type=int, default=3,
-                      help="width_strides")
-  parser.add_argument("--cnn_min_window_size", type=int, default=1, help="cnn min windows size.")
-  parser.add_argument("--cnn_max_window_size", type=int, default=5, help="cnn max windows size.")
-  parser.add_argument("--charcnn_relu", type=str, default="relu", help="")
-  parser.add_argument("--charcnn_min_window_size", type=int, default=2, help="char cnn min windows size.")
-  parser.add_argument("--charcnn_max_window_size", type=int, default=5, help="char cnn max windows size.")
-  parser.add_argument("--filters_per_windows", type=int, default=200, help="filter_depth")
-  parser.add_argument("--high_way_layer", type=int, default=4, help="highway network layers")
-  parser.add_argument("--charcnn_high_way_layer", type=int, default=2, help="highway network layers")
-  parser.add_argument("--residual_cnn_layer", type="bool", nargs="?", const=True,
-                      default=False,
-                      help="Whether to add residual connections.")
+  # HL-Settings
+  parser.add_argument("--seg_len", type=int, default=8, help="maximum characters per word")
 
-  parser.add_argument("--residual_cnn_layer_type", type=str, default='concat', help="cnn min size.")
-  parser.add_argument("--high_way_type", type=str, default='uniform', help="cnn min size.")
-  parser.add_argument("--charcnn_high_way_type", type=str, default='uniform', help="uniform or per_filter")
-  # network
+  """
+  Encoder Setting
+  """
+  # General
+  parser.add_argument("--embedding_model", type=str, default="default", help="""\
+          rnn | cnn| bahdanau | normed_bahdanau or set to "" 
+          """)
+
   parser.add_argument("--src_embed_type", type=str, default="raw", help="""\
-        raw | seg_cnn\
-        """)
+         raw（ word/sub/character level） | seg_cnn (hybrid-level with CNN) \
+         """)
   parser.add_argument("--embed_dim", type=int, default=640, help="Embedding Vector Dimension")
+
+  # Encoder RNN
   parser.add_argument("--num_units", type=int, default=128, help="Network size.")
   parser.add_argument("--num_layers", type=int, default=2,
                       help="Network depth.")
   parser.add_argument("--encoder_type", type=str, default="bi", help="""\
-      uni | bi | gnmt. For bi, we build num_layers/2 bi-directional layers.For
-      gnmt, we build 1 bi-directional layer, and (num_layers - 1) uni-
-      directional layers.\
-      """)
+        uni | bi | gnmt. For bi, we build num_layers/2 bi-directional layers.For
+        gnmt, we build 1 bi-directional layer, and (num_layers - 1) uni-
+        directional layers.\
+        """)
   parser.add_argument("--residual", type="bool", nargs="?", const=True,
                       default=False,
                       help="Whether to add residual connections.")
@@ -97,12 +85,39 @@ def add_arguments(parser):
   parser.add_argument("--num_embeddings_partitions", type=int, default=0,
                       help="Number of partitions for embedding vars.")
 
+  # CNN for full word sequence
+  parser.add_argument("--width_strides", type=int, default=3,
+                      help="CNN width_strides")
+  parser.add_argument("--cnn_min_window_size", type=int, default=1, help="cnn min windows size.")
+  parser.add_argument("--cnn_max_window_size", type=int, default=5, help="cnn max windows size.")
+  parser.add_argument("--filters_per_windows", type=int, default=200, help="filter_depth")
+  parser.add_argument("--high_way_layer", type=int, default=4, help="highway network layers")
+  # 如何进行残差连接以及连接方式
+  parser.add_argument("--residual_cnn_layer", type="bool", nargs="?", const=True,
+                      default=False,
+                      help="Whether to add residual connections.")
+  parser.add_argument("--residual_cnn_layer_type", type=str, default='concat', help="cnn min size.")
+  parser.add_argument("--high_way_type", type=str, default='uniform', help="cnn min size.")
+
+  """
+    CharCNN Encoder Setting
+  """
+  # CNN for characters of a word
+  parser.add_argument("--charcnn_relu", type=str, default="relu", help="CharCNN activation type")
+  parser.add_argument("--charcnn_min_window_size", type=int, default=2, help="CharCNN cnn min windows size.")
+  parser.add_argument("--charcnn_max_window_size", type=int, default=5, help="CharCNN cnn max windows size.")
+  parser.add_argument("--charcnn_high_way_layer", type=int, default=2, help="CharCNN highway network layers")
+  parser.add_argument("--charcnn_high_way_type", type=str, default='uniform', help="uniform or per_filter")
+
+  """
+    Network Setting
+  """
+
   # attention mechanisms
   parser.add_argument("--attention", type=str, default="luong", help="""\
       luong | scaled_luong | bahdanau | normed_bahdanau or set to "" for no
       attention\
       """)
-
 
   parser.add_argument(
       "--attention_architecture",
@@ -259,6 +274,8 @@ def add_arguments(parser):
       """)
   parser.add_argument("--scope", type=str, default=None,
                       help="scope to put variables under")
+
+  # TODO 检查这里
   parser.add_argument("--hparams_path", type=str, default=None,
                       help=("Path to standard hparams json file that overrides"
                             "hparams values from FLAGS."))
@@ -314,10 +331,12 @@ def add_arguments(parser):
 
 
 def create_hparams(flags):
-  """Create training hparams."""
+  """
+  Create training hparams.
+  """
+  #TODO : Add default hparams pattern
+
   return tf.contrib.training.HParams(
-
-
       # seg embedding
       seg_len=flags.seg_len,
       seg_separator='\t',
