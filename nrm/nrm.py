@@ -590,7 +590,10 @@ def extend_hparams(hparams):
 
 
 def ensure_compatible_hparams(hparams, default_hparams, hparams_path):
-  """Make sure the loaded hparams is compatible with new changes."""
+  """
+  使用default的hparams替换原始参数的地址
+  Make sure the loaded hparams is compatible with new changes.
+  """
   default_hparams = utils.maybe_parse_standard_hparams(
       default_hparams, hparams_path)
 
@@ -641,8 +644,6 @@ def run_main(flags, default_hparams, train_fn, inference_fn, target_session=""):
   # Job
   jobid = flags.jobid
   num_workers = flags.num_workers
-
-
   utils.print_out("# Job id %d" % jobid)
 
   # Random
@@ -666,12 +667,14 @@ def run_main(flags, default_hparams, train_fn, inference_fn, target_session=""):
   if flags.inference_input_file:
     # Inference indices
     hparams.inference_indices = None
+
+    #TODO Inference的beam_size逻辑
     hparams.infer_beam_width = flags.infer_beam_width
     hparams.beam_width = flags.infer_beam_width 
     utils.print_out('real infer_Beam_size %d' % hparams.infer_beam_width)
     if flags.inference_list:
       (hparams.inference_indices) = (
-          [int(token)  for token in flags.inference_list.split(",")])
+          [int(token) for token in flags.inference_list.split(",")])
 
     # Inference
     trans_file = flags.inference_output_file
@@ -697,6 +700,7 @@ def run_main(flags, default_hparams, train_fn, inference_fn, target_session=""):
 
 
 def main(unused_argv):
+  # 由Command Line和默认参数共同决定的参数
   default_hparams = create_hparams(FLAGS)
   train_fn = train.train
   inference_fn = inference.inference

@@ -100,6 +100,9 @@ def _clean(sentence, subword_option):
     sentence = sentence.replace(" @@ ", "")
     sentence = sentence.replace("@@ ", "")
     sentence = sentence.replace(" @@", "")
+  elif subword_option_1 == 'hybrid2':
+    sentence = sentence.replace(" ", "")
+    sentence = sentence.replace("@@", " ")
   return sentence
 
 
@@ -123,14 +126,14 @@ def _bleu(ref_file, trans_file,max_order=4, subword_option=None):
       reference_list.append(reference.split(" "))
     per_segment_references.append(reference_list)
 
-  #print(per_segment_references)
+  print(per_segment_references[0:15])
 
   translations = []
   with codecs.getreader("utf-8")(tf.gfile.GFile(trans_file, "rb")) as fh:
     for line in fh:
       line = _clean(line, subword_option=subword_option)
       translations.append(line.split(" "))
-  #print(translations)
+  print(translations[0:15])
   # bleu_score, precisions, bp, ratio, translation_length, reference_length
   bleu_score, _, _, _, _, _ = bleu.compute_bleu(
       per_segment_references, translations, max_order, smooth)
@@ -229,15 +232,21 @@ def _moses_bleu(multi_bleu_script, tgt_test, trans_file, subword_option=None):
   return bleu_score
 
 if __name__ == "__main__":
-  ref_file = "/Users/mebiuw/PycharmProjects/nmt/nrm/utils/test_ref.txt"
-  trans_file = "/Users/mebiuw/PycharmProjects/nmt/nrm/utils/test_trans.txt"
+  ref_file = r"D:\nmt\ref\dev.20000.response"
+  #ref_file = r"D:\nmt\ref\char2_dev.response"
+  trans_file = r"D:\nmt\beam_search\lfw_charcnn_10_dev_f.inf.response"
+  
   subword = None
 
   print('res file: %s' % ref_file)
   print('trans_file:%s' % trans_file)
-  for metric in ['bleu','bleu-1','bleu-2','bleu-3','bleu-4','rouge','accuracy','word_accuracy']:
-    score = evaluate(ref_file,trans_file,metric,subword_option=subword)
-    print('%s\t%s' % (metric, score))
-  for metric in ['bleu','bleu-1','bleu-2','bleu-3','bleu-4','rouge','accuracy','word_accuracy']:
-    score = evaluate(ref_file,trans_file,metric+'@char',subword_option=subword)
-    print('%s\t%s' % (metric, score))
+  scores = []
+  for metric in ['rouge','bleu-1','bleu-2','bleu-3','bleu-4']:
+    score = evaluate(ref_file,trans_file,metric+'@hybrid',subword_option=subword)
+    scores.append(str(score))
+  print('\t'.join(scores))
+  scores = []
+  for metric in ['rouge', 'bleu-1', 'bleu-2', 'bleu-3', 'bleu-4']:
+    score = evaluate(ref_file, trans_file, metric + '@char', subword_option=subword)
+    scores.append(str(score))
+  print('\t'.join(scores))
