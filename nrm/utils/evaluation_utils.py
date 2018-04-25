@@ -60,6 +60,9 @@ def evaluate(ref_file, trans_file, metric, subword_option=None):
   elif metric.lower() == "word_accuracy":
     evaluation_score = _word_accuracy(ref_file, trans_file,
                              subword_option=subword_option)
+  elif metric.lower()[0:len('distinct')] == 'distinct':
+    max_order = int(metric.lower()[len('distinct')+1:])
+    evaluation_score = _distinct(trans_file,max_order,subword_option=subword_option)
   else:
     raise ValueError("Unknown metric %s" % metric)
 
@@ -106,6 +109,28 @@ def _clean(sentence, subword_option):
   return sentence
 
 
+def _distinct(trans_file,max_order=1, subword_option=None):
+  """Compute Distinct Score"""
+
+  translations = []
+  with codecs.getreader("utf-8")(tf.gfile.GFile(trans_file, "rb")) as fh:
+    for line in fh:
+      line = _clean(line, subword_option=subword_option)
+      translations.append(line.split(" "))
+
+  num_tokens = 0
+  unique_tokens = set()
+  for items in translations:
+
+      print(items)
+      for i in range(0, len(items) - max_order + 1):
+        tmp = ' '.join(items[i:i+max_order])
+        unique_tokens.add(tmp)
+        num_tokens += 1
+  ratio = len(unique_tokens) / num_tokens
+  return 100 * ratio
+
+
 # Follow //transconsole/localization/machine_translation/metrics/bleu_calc.py
 def _bleu(ref_file, trans_file,max_order=4, subword_option=None):
   """Compute BLEU scores and handling BPE."""
@@ -126,14 +151,14 @@ def _bleu(ref_file, trans_file,max_order=4, subword_option=None):
       reference_list.append(reference.split(" "))
     per_segment_references.append(reference_list)
 
-  print(per_segment_references[0:15])
+  #print(per_segment_references[0:15])
 
   translations = []
   with codecs.getreader("utf-8")(tf.gfile.GFile(trans_file, "rb")) as fh:
     for line in fh:
       line = _clean(line, subword_option=subword_option)
       translations.append(line.split(" "))
-  print(translations[0:15])
+  #print(translations[0:15])
   # bleu_score, precisions, bp, ratio, translation_length, reference_length
   bleu_score, _, _, _, _, _ = bleu.compute_bleu(
       per_segment_references, translations, max_order, smooth)
@@ -232,16 +257,16 @@ def _moses_bleu(multi_bleu_script, tgt_test, trans_file, subword_option=None):
   return bleu_score
 
 if __name__ == "__main__":
-  ref_file = r"D:\nmt\ref\Test.txt"
+  ref_file = r"D:\nmt\ref\dev.20000.response"
   #ref_file = r"D:\nmt\ref\char2_dev.response"
-  trans_file = r"D:\nmt\beam_search\Test.txt"
+  trans_file = r"D:\nmt\beam_search\word_4W_10_dev_f.inf.response"
   
   subword = None
 
   print('res file: %s' % ref_file)
   print('trans_file:%s' % trans_file)
   scores = []
-  for metric in ['rouge','bleu-1','bleu-2','bleu-3','bleu-4']:
+  for metric in ['rouge','bleu-1','bleu-2','bleu-3','bleu-4','distinct-1']:
     score = evaluate(ref_file,trans_file,metric+'@hybrid',subword_option=subword)
     scores.append(str(score))
   print('\t'.join(scores))
