@@ -232,9 +232,9 @@ def _moses_bleu(multi_bleu_script, tgt_test, trans_file, subword_option=None):
   return bleu_score
 
 if __name__ == "__main__":
-  ref_file = r"D:\nmt\ref\dev.20000.response"
+  ref_file = r"D:\nmt\ref\Test.txt"
   #ref_file = r"D:\nmt\ref\char2_dev.response"
-  trans_file = r"D:\nmt\beam_search\lfw_charcnn_10_dev_f.inf.response"
+  trans_file = r"D:\nmt\beam_search\Test.txt"
   
   subword = None
 

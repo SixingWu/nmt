@@ -105,8 +105,20 @@ def compute_bleu(reference_corpus, translation_corpus, max_order=4,
   if ratio > 1.0:
     bp = 1.
   else:
-    bp = math.exp(1 - 1. / ratio)
+    bp = math.exp(1 - 1. / (ratio + 1e-20))
 
   bleu = geo_mean * bp
 
   return (bleu, precisions, bp, ratio, translation_length, reference_length)
+
+if __name__ == '__main__':
+    output = []
+    reference = []
+    with open('output') as f:
+        for i in f:
+            output.append(i.split())
+    with open('reference') as f:
+        for i in f:
+            reference.append([i.split()])
+    # reference
+    compute_bleu(reference, output) #[['hello', 'world', '.']], ['.'])
