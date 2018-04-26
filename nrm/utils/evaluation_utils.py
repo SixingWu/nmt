@@ -91,6 +91,7 @@ def _clean(sentence, subword_option):
     sentence = sentence.replace(" ", "")
     sentence = sentence.replace("<SPACE>"," ")
   if subword_option_1 == 'char':
+    sentence = sentence.replace("<SPACE>", "")
     sentence = sentence.replace("@@", "")
     sentence = sentence.replace(" ","")
     sentence = " ".join(sentence)
