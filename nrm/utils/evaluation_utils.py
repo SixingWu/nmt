@@ -87,6 +87,9 @@ def _clean(sentence, subword_option):
     sentence = u"".join(sentence.split()).replace(u"\u2581", u" ").lstrip()
 
   # speical for chinese
+  if subword_option_1 == 'space':
+    sentence = sentence.replace(" ", "")
+    sentence = sentence.replace("<SPACE>"," ")
   if subword_option_1 == 'char':
     sentence = sentence.replace("@@", "")
     sentence = sentence.replace(" ","")
