@@ -126,7 +126,7 @@ def _distinct(trans_file,max_order=1, subword_option=None):
   unique_tokens = set()
   for items in translations:
 
-      print(items)
+      #print(items)
       for i in range(0, len(items) - max_order + 1):
         tmp = ' '.join(items[i:i+max_order])
         unique_tokens.add(tmp)
