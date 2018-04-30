@@ -1,0 +1,3 @@
+export CUDA_VISIBLE_DEVICES=0 
+
+python3 -m nrm.nrm      --embed_dim=620      --encoder_type=bi      --tgt=response      --num_units=1024      --steps_per_stats=100      --dev_prefix=/ldev/tensorflow/nmt2/nmt/data/wordlevel/dev      --batch_size=80      --share_vocab=False      --vocab_prefix=/ldev/tensorflow/nmt2/nmt/data/wordlevel/vocab.40000.separate      --out_dir=models/chinese_sub      --test_prefix=/ldev/tensorflow/nmt2/nmt/data/wordlevel/test      --tgt_max_len=20      --num_train_steps=1000000      --attention=luong      --src=message      --src_max_len=20      --train_prefix=/ldev/tensorflow/nmt2/nmt/data/wordlevel/train     >> logs/chinese_sub.txt 

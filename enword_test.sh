@@ -1,0 +1,3 @@
+export CUDA_VISIBLE_DEVICES=0 
+
+python3 -m nrm.nrm      --embed_dim=512      --encoder_type=bi      --tgt=response      --num_units=256      --steps_per_stats=100      --dev_prefix=/ldev/tensorflow/nmt2/nmt/data/enwordlevel/dev      --batch_size=256      --share_vocab=False      --vocab_prefix=/ldev/tensorflow/nmt2/nmt/data/enwordlevel/vocab.40000.separate      --out_dir=models/enword_test      --test_prefix=/ldev/tensorflow/nmt2/nmt/data/enwordlevel/test      --tgt_max_len=30      --num_train_steps=1000000      --attention=luong      --src=message      --src_max_len=30      --train_prefix=/ldev/tensorflow/nmt2/nmt/data/enwordlevel/train     >> logs/enword_test.txt 
