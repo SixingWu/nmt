@@ -1,3 +1,3 @@
-export CUDA_VISIBLE_DEVICES=1 
+export CUDA_VISIBLE_DEVICES=0 
 
 python3 -m nrm.nrm      --embed_dim=512      --encoder_type=bi      --tgt=response      --src=message      --num_units=512      --steps_per_stats=100      --dev_prefix=/ldev/tensorflow/nmt2/nmt/data/charspace/dev      --batch_size=256      --unit_type=lstm      --share_vocab=False      --vocab_prefix=/ldev/tensorflow/nmt2/nmt/data/charspace/vocab.40000.separate      --out_dir=models/chinese_char_lstm      --metrics=rouge@space,bleu-1@space,bleu-2@space,bleu-3@space,bleu-4@space,distinct-1@space,distinct-2@space      --test_prefix=/ldev/tensorflow/nmt2/nmt/data/charspace/test      --tgt_max_len=50      --num_train_steps=1000000      --attention=luong      --infer_batch_size=10      --num_layers=2      --src_max_len=50      --train_prefix=/ldev/tensorflow/nmt2/nmt/data/charspace/train     >> logs/chinese_char_lstm.txt 
