@@ -76,6 +76,7 @@ class BaseModel(object):
     self.num_layers = hparams.num_layers
     self.num_gpus = hparams.num_gpus
     self.time_major = hparams.time_major
+    self.loss_items = []
 
     # extra_args: to make it flexible for adding external customizable code
     self.single_cell_fn = None
@@ -510,6 +511,7 @@ class BaseModel(object):
     pass
 
   def _compute_loss(self, logits):
+
     """Compute optimization loss."""
     target_output = self.iterator.target_output
     if self.time_major:
@@ -638,42 +640,46 @@ class Model(BaseModel):
                   if hparams.src_embed_type[0:3] == 'cnn':
                       # Simply add two embeddings
                       encoder_emb_inp += tf.nn.embedding_lookup(self.embedding_encoder, source)
-                  elif hparams.src_embed_type[0:3] == 'lfw':
-                      unknown_mask = tf.transpose(iterator.unknown_src,perm=[1,0])
-                      utils.debug_tensor(unknown_mask,'unknown mask')
-                      unknown_mask = tf.cast(tf.reshape(unknown_mask,[_seq_len,_batch_size,1]),tf.float32)
-                      encoder_emb_inp = encoder_emb_inp * unknown_mask + tf.nn.embedding_lookup(self.embedding_encoder, source) * (1.0 - unknown_mask)
-                  elif hparams.src_embed_type[0:3] == 'dlf':
-                      # 考虑到了mask的属性的 以及二者变成正值
-                      unknown_mask = tf.transpose(iterator.unknown_src, perm=[1, 0])
-                      activation = None
-                      if hparams.charcnn_relu == 'relu':
-                          activation = tf.nn.relu
-                      elif hparams.charcnn_relu == 'leaky':
-                          activation = tf.nn.leaky_relu
-                      unknown_mask = tf.cast(tf.reshape(unknown_mask, [_seq_len, _batch_size, 1]), tf.float32)
-                      encoder_emb_inp = embedding_helper.simple_3D_concat_mask_weighted_function(encoder_emb_inp,
-                                                                                            tf.nn.embedding_lookup(
-                                                                                                self.embedding_encoder,
-                                                                                                source),
-                                                                                                 unknown_mask,
-                                                                                            hparams.embed_dim,activation)
+                      # TODO 添加针对这个的Loss 项目
 
 
-                  elif hparams.src_embed_type[0:3] == 'gtf':
-                      # gtf : Gate function
-                      encoder_emb_inp = embedding_helper.simple_3D_concat_gate_function(encoder_emb_inp,
-                                                                                        tf.nn.embedding_lookup(
-                                                                                            self.embedding_encoder,
-                                                                                            source),
-                                                                                        hparams.embed_dim)
-                  elif hparams.src_embed_type[0:3] == 'wtf':
-                      # gtf : Gate function
-                      encoder_emb_inp = embedding_helper.simple_3D_concat_weighted_function(encoder_emb_inp,
-                                                                                            tf.nn.embedding_lookup(
-                                                                                                self.embedding_encoder,
-                                                                                                source),
-                                                                                            hparams.embed_dim)
+                  # 暂时放弃这个
+                  # elif hparams.src_embed_type[0:3] == 'lfw':
+                  #     unknown_mask = tf.transpose(iterator.unknown_src,perm=[1,0])
+                  #     utils.debug_tensor(unknown_mask,'unknown mask')
+                  #     unknown_mask = tf.cast(tf.reshape(unknown_mask,[_seq_len,_batch_size,1]),tf.float32)
+                  #     encoder_emb_inp = encoder_emb_inp * unknown_mask + tf.nn.embedding_lookup(self.embedding_encoder, source) * (1.0 - unknown_mask)
+                  # elif hparams.src_embed_type[0:3] == 'dlf':
+                  #     # 考虑到了mask的属性的 以及二者变成正值
+                  #     unknown_mask = tf.transpose(iterator.unknown_src, perm=[1, 0])
+                  #     activation = None
+                  #     if hparams.charcnn_relu == 'relu':
+                  #         activation = tf.nn.relu
+                  #     elif hparams.charcnn_relu == 'leaky':
+                  #         activation = tf.nn.leaky_relu
+                  #     unknown_mask = tf.cast(tf.reshape(unknown_mask, [_seq_len, _batch_size, 1]), tf.float32)
+                  #     encoder_emb_inp = embedding_helper.simple_3D_concat_mask_weighted_function(encoder_emb_inp,
+                  #                                                                           tf.nn.embedding_lookup(
+                  #                                                                               self.embedding_encoder,
+                  #                                                                               source),
+                  #                                                                                unknown_mask,
+                  #                                                                           hparams.embed_dim,activation)
+                  #
+                  #
+                  # elif hparams.src_embed_type[0:3] == 'gtf':
+                  #     # gtf : Gate function
+                  #     encoder_emb_inp = embedding_helper.simple_3D_concat_gate_function(encoder_emb_inp,
+                  #                                                                       tf.nn.embedding_lookup(
+                  #                                                                           self.embedding_encoder,
+                  #                                                                           source),
+                  #                                                                       hparams.embed_dim)
+                  # elif hparams.src_embed_type[0:3] == 'wtf':
+                  #     # gtf : Gate function
+                  #     encoder_emb_inp = embedding_helper.simple_3D_concat_weighted_function(encoder_emb_inp,
+                  #                                                                           tf.nn.embedding_lookup(
+                  #                                                                               self.embedding_encoder,
+                  #                                                                               source),
+                  #                                                                           hparams.embed_dim)
                   else:
                       raise Exception('Unknown hparams.src_embed_type : %s' % hparams.src_embed_type)
 
