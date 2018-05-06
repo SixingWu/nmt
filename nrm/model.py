@@ -619,7 +619,7 @@ class Model(BaseModel):
                       embed_dim=hparams.seg_embed_dim,
                       min_windows=hparams.charcnn_min_window_size,
                       max_windows=hparams.charcnn_max_window_size,
-                      flexible_configs=hparams.flexible_charcnn_windpws,
+                      flexible_configs=hparams.flexible_charcnn_windows,
                       filters_per_windows=hparams.charcnn_filters_per_windows,
                       width_strides=1,
                       high_way_type=hparams.charcnn_high_way_type,

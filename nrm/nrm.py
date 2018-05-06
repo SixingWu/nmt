@@ -104,7 +104,7 @@ def add_arguments(parser):
   """
   # CNN for characters of a word
 
-  parser.add_argument("--flexible_charcnn_windpws", type=str, default='none', help="window_width/height windows_width/height")
+  parser.add_argument("--flexible_charcnn_windows", type=str, default='none', help="window_width/height windows_width/height")
   parser.add_argument("--charcnn_filters_per_windows", type=int, default=200, help="charcnn_filters_per_windows")
   parser.add_argument("--charcnn_relu", type=str, default="relu", help="CharCNN activation type")
   parser.add_argument("--charcnn_min_window_size", type=int, default=2, help="CharCNN cnn min windows size.")
@@ -364,7 +364,8 @@ def create_hparams(flags):
       out_dir=flags.out_dir,
 
       # cnn encoder
-      flexible_charcnn_windpws=flags.flexible_charcnn_windpws,
+      # TODO 修复命名错误
+      flexible_charcnn_windows=flags.flexible_charcnn_windows,
       charcnn_relu=flags.charcnn_relu,
       charcnn_min_window_size=flags.charcnn_min_window_size,
       charcnn_max_window_size=flags.charcnn_max_window_size,
