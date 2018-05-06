@@ -53,6 +53,7 @@ def add_arguments(parser):
 
   # HL-Settings
   parser.add_argument("--seg_len", type=int, default=8, help="maximum characters per word")
+  parser.add_argument("--seg_embed_dim", type=int, default=160, help="seg_embed_dim")
 
   """
   Encoder Setting
