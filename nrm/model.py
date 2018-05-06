@@ -440,8 +440,7 @@ class BaseModel(object):
         # If memory is a concern, we should apply output_layer per timestep.
         device_id = num_layers if num_layers < num_gpus else (num_layers - 1)
         with tf.device(model_helper.get_device_str(device_id, num_gpus)):
-
-          print("debug" + outputs.rnn_output)
+          print("debug" + str(outputs.rnn_output))
           logits = self.output_layer(outputs.rnn_output) # TODO Debug
 
       ## Inference
@@ -629,6 +628,7 @@ class Model(BaseModel):
 
                   )
                   cnn_output,filter_num = embedding_helper.build_cnn_encoder(encoder_emb_inp, word_encoder)
+                  print('filter num: %d' % filter_num)
                   # TODO Bug了，这里的CNN Encoder并不收缩维度
                   # [batch_size seq_len, embed]
                   encoder_emb_inp = cnn_output
@@ -641,7 +641,7 @@ class Model(BaseModel):
                   # merge
                   if hparams.src_embed_type[0:3] == 'cnn':
                       # Simply add two embeddings
-                      encoder_emb_inp += tf.nn.embedding_lookup(self.embedding_encoder, source)
+                      encoder_emb_inp = encoder_emb_inp + tf.nn.embedding_lookup(self.embedding_encoder, source)
                       # TODO 添加针对这个的Loss 项目
 
 

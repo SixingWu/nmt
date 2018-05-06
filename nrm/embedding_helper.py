@@ -144,7 +144,7 @@ def build_cnn_encoder(embedding_emb_inp, cnn_encoder_param):
             conv_outputs.append(conv_out)
     else:
         print('Flexible CharCNN Configurations :  %s' % flexible_configs)
-        params = flexible_configs.split()
+        params = flexible_configs.split('-')
         filter_nums = 0
         for para in params:
             items = para.split('/')
@@ -168,7 +168,7 @@ def build_cnn_encoder(embedding_emb_inp, cnn_encoder_param):
     width_strides = max_time
     strides = [1, 1, width_strides, 1]
     segment_len = tf.cast(tf.ceil(max_time / width_strides), tf.int32)
-    for conv_output,conv_height in (conv_outputs,conv_heights):
+    for conv_output,conv_height in zip(conv_outputs,conv_heights):
         pool_out = tf.nn.max_pool(conv_output, [1, 1, width_strides, 1], strides, padding='SAME')
         # [batch, height = 1, width = segment_len, channels = filters_per_windows]
         pool_out = tf.reshape(pool_out, [batch_size, 1, conv_height])
