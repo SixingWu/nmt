@@ -440,7 +440,9 @@ class BaseModel(object):
         # If memory is a concern, we should apply output_layer per timestep.
         device_id = num_layers if num_layers < num_gpus else (num_layers - 1)
         with tf.device(model_helper.get_device_str(device_id, num_gpus)):
-          logits = self.output_layer(outputs.rnn_output)
+
+          print("debug" + outputs.rnn_output)
+          logits = self.output_layer(outputs.rnn_output) # TODO Debug
 
       ## Inference
       else:
@@ -613,11 +615,12 @@ class Model(BaseModel):
               with tf.variable_scope('cnn_word_embedding_encoder'):
                   word_encoder = CNNEncoderParam(
                       max_time=hparams.seg_len,
-                      batch_size=_batch_size * _seq_len,
+                      batch_size= _batch_size * _seq_len,
                       embed_dim=hparams.seg_embed_dim,
                       min_windows=hparams.charcnn_min_window_size,
                       max_windows=hparams.charcnn_max_window_size,
-                      filters_per_windows=200,
+                      flexible_configs=hparams.flexible_charcnn_windpws,
+                      filters_per_windows=hparams.charcnn_filters_per_windows,
                       width_strides=1,
                       high_way_type=hparams.charcnn_high_way_type,
                       high_way_layers=hparams.charcnn_high_way_layer,
@@ -627,7 +630,6 @@ class Model(BaseModel):
                   )
                   cnn_output,filter_num = embedding_helper.build_cnn_encoder(encoder_emb_inp, word_encoder)
                   # TODO Bug了，这里的CNN Encoder并不收缩维度
-                  print("debug" + str(cnn_output))
                   # [batch_size seq_len, embed]
                   encoder_emb_inp = cnn_output
                   encoder_emb_inp = embedding_helper.projection(encoder_emb_inp, filter_num,

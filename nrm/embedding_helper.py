@@ -12,7 +12,7 @@ class EncoderParam(
 
 class CNNEncoderParam(
     collections.namedtuple("CNNEncoderParam", ("max_time", "batch_size", "embed_dim","relu_type",
-                                            "min_windows","max_windows","filters_per_windows","width_strides",
+                                            "min_windows","max_windows","flexible_configs","filters_per_windows","width_strides",
                                             "high_way_type","high_way_layers","name"))):
   pass
 
@@ -106,8 +106,11 @@ def build_cnn_encoder(embedding_emb_inp, cnn_encoder_param):
     min_windows = cnn_encoder_param.min_windows
     max_windows = cnn_encoder_param.max_windows
     filters_per_windows = cnn_encoder_param.filters_per_windows
+    # 增加设置
+    flexible_configs = cnn_encoder_param.flexible_configs
 
     relu_type = cnn_encoder_param.relu_type
+
 
 
     high_way_type = cnn_encoder_param.high_way_type
@@ -126,35 +129,54 @@ def build_cnn_encoder(embedding_emb_inp, cnn_encoder_param):
 
     # CNN layer
     conv_outputs = []
-    filter_nums = (max_windows - min_windows + 1) * filters_per_windows
-    print('debug' + str(conv_inputs))
-    for width in range(min_windows, max_windows + 1):
-        filter = tf.get_variable("filter_%d" % ( width ), shape=[embed_dim, width, 1, filters_per_windows])
-        strides = [1, embed_dim, 1, 1]
-        # [batch, height = 1, width = max_time, channels = filters_per_windows]
-        if relu_type == 'relu':
-            conv_out = tf.nn.relu(tf.nn.conv2d(conv_inputs, filter, strides, padding='SAME'))
-        elif relu_type == 'leaky':
-            conv_out = tf.nn.leaky_relu(tf.nn.conv2d(conv_inputs, filter, strides, padding='SAME'))
-        conv_outputs.append(conv_out)
+    conv_heights = []
+    if flexible_configs == 'none':
+        filter_nums = (max_windows - min_windows + 1) * filters_per_windows
+        for width in range(min_windows, max_windows + 1):
+            filter = tf.get_variable("filter_%d" % ( width ), shape=[embed_dim, width, 1, filters_per_windows])
+            conv_heights.append(filters_per_windows)
+            strides = [1, embed_dim, 1, 1]
+            # [batch, height = 1, width = max_time, channels = filters_per_windows]
+            if relu_type == 'relu':
+                conv_out = tf.nn.relu(tf.nn.conv2d(conv_inputs, filter, strides, padding='SAME'))
+            elif relu_type == 'leaky':
+                conv_out = tf.nn.leaky_relu(tf.nn.conv2d(conv_inputs, filter, strides, padding='SAME'))
+            conv_outputs.append(conv_out)
+    else:
+        print('Flexible CharCNN Configurations :  %s' % flexible_configs)
+        params = flexible_configs.split()
+        filter_nums = 0
+        for para in params:
+            items = para.split('/')
+            width = int(items[0])
+            height = int(items[1])
+            filter_nums += height
+            conv_heights.append(height)
+
+            filter = tf.get_variable("flexible_filter_%d_%d" % (width,height), shape=[embed_dim, width, 1, height])
+            strides = [1, embed_dim, 1, 1]
+            # [batch, height = 1, width = max_time, channels = filters_per_windows]
+            if relu_type == 'relu':
+                conv_out = tf.nn.relu(tf.nn.conv2d(conv_inputs, filter, strides, padding='SAME'))
+            elif relu_type == 'leaky':
+                conv_out = tf.nn.leaky_relu(tf.nn.conv2d(conv_inputs, filter, strides, padding='SAME'))
+            conv_outputs.append(conv_out)
+
 
     # max_pooling over time
     pool_outputs = []
     width_strides = max_time
     strides = [1, 1, width_strides, 1]
     segment_len = tf.cast(tf.ceil(max_time / width_strides), tf.int32)
-    for conv_output in conv_outputs:
-
-        print('debug'+str(conv_output))
+    for conv_output,conv_height in (conv_outputs,conv_heights):
         pool_out = tf.nn.max_pool(conv_output, [1, 1, width_strides, 1], strides, padding='SAME')
         # [batch, height = 1, width = segment_len, channels = filters_per_windows]
-        print('debug'+str(pool_out))
-
-        pool_out = tf.reshape(pool_out, [batch_size, 1, filters_per_windows])
+        pool_out = tf.reshape(pool_out, [batch_size, 1, conv_height])
         pool_outputs.append(pool_out)
 
     # Highway network
     if high_way_layers > 0:
+
         if relu_type == 'relu':
             relu_func = tf.nn.relu
         elif relu_type == 'leaky':
@@ -167,12 +189,14 @@ def build_cnn_encoder(embedding_emb_inp, cnn_encoder_param):
             highway_outputs = tf.reshape(high_way_tmp, [batch_size, filter_nums])
         elif high_way_type == 'per_filter':
             highway_results = []
-            for w, pool_result in enumerate(pool_outputs):
-                pool_highway_tmp = tf.reshape(pool_result, [-1, filters_per_windows])
+            w = 0
+            for height, pool_result in zip(conv_heights, pool_outputs):
+                pool_highway_tmp = tf.reshape(pool_result, [-1, height])
                 for i in range(high_way_layers):
-                    pool_highway_tmp = highway(pool_highway_tmp, filters_per_windows, relu_func,
+                    pool_highway_tmp = highway(pool_highway_tmp, height, relu_func,
                                                name='highway_w%d_%d' % (w + min_windows, i))
                 highway_results.append(pool_highway_tmp)
+                w += 1
             stacked_results = tf.concat(highway_results, axis=-1)
             highway_outputs = tf.reshape(stacked_results, [batch_size, filter_nums])
     else:
