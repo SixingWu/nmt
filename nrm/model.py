@@ -440,8 +440,6 @@ class BaseModel(object):
         # If memory is a concern, we should apply output_layer per timestep.
         device_id = num_layers if num_layers < num_gpus else (num_layers - 1)
         with tf.device(model_helper.get_device_str(device_id, num_gpus)):
-
-          print("debug" + outputs.rnn_output)
           logits = self.output_layer(outputs.rnn_output) # TODO Debug
 
       ## Inference
