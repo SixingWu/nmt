@@ -593,11 +593,6 @@ class Model(BaseModel):
           encoder_emb_inp = tf.nn.embedding_lookup(
               self.embedding_encoder, source)
       elif 'cnn_segment' in hparams.src_embed_type:
-          # collections.namedtuple("CNNEncoderParam", ("max_time", "batch_size", "embed_dim",
-          #                                            "min_windows", "max_windows", "filters_per_windows",
-          #                                            "width_strides",
-          #                                            "high_way_type", "high_way_layers", "source_sequence_length",
-          #                                            "residual_cnn_layer", "residual_cnn_layer_type", "name"))):
           with tf.variable_scope('cnn_segment_embedding'):
               # [batch, seq_len, seg_len]
               seg_source = iterator.seg_source
@@ -630,7 +625,6 @@ class Model(BaseModel):
 
                   )
                   cnn_output,filter_num = embedding_helper.build_cnn_encoder(encoder_emb_inp, word_encoder)
-                  # TODO Bug了，这里的CNN Encoder并不收缩维度
                   # [batch_size seq_len, embed]
                   encoder_emb_inp = cnn_output
                   encoder_emb_inp = embedding_helper.projection(encoder_emb_inp, filter_num,
@@ -651,44 +645,6 @@ class Model(BaseModel):
                       word_level = tf.nn.embedding_lookup(self.embedding_encoder, source)
                       self.loss_items.append(tf.reduce_mean(tf.abs(word_level - encoder_emb_inp) / 2))
                       encoder_emb_inp += word_level
-
-                  # 暂时放弃这个
-                  # elif hparams.src_embed_type[0:3] == 'lfw':
-                  #     unknown_mask = tf.transpose(iterator.unknown_src,perm=[1,0])
-                  #     utils.debug_tensor(unknown_mask,'unknown mask')
-                  #     unknown_mask = tf.cast(tf.reshape(unknown_mask,[_seq_len,_batch_size,1]),tf.float32)
-                  #     encoder_emb_inp = encoder_emb_inp * unknown_mask + tf.nn.embedding_lookup(self.embedding_encoder, source) * (1.0 - unknown_mask)
-                  # elif hparams.src_embed_type[0:3] == 'dlf':
-                  #     # 考虑到了mask的属性的 以及二者变成正值
-                  #     unknown_mask = tf.transpose(iterator.unknown_src, perm=[1, 0])
-                  #     activation = None
-                  #     if hparams.charcnn_relu == 'relu':
-                  #         activation = tf.nn.relu
-                  #     elif hparams.charcnn_relu == 'leaky':
-                  #         activation = tf.nn.leaky_relu
-                  #     unknown_mask = tf.cast(tf.reshape(unknown_mask, [_seq_len, _batch_size, 1]), tf.float32)
-                  #     encoder_emb_inp = embedding_helper.simple_3D_concat_mask_weighted_function(encoder_emb_inp,
-                  #                                                                           tf.nn.embedding_lookup(
-                  #                                                                               self.embedding_encoder,
-                  #                                                                               source),
-                  #                                                                                unknown_mask,
-                  #                                                                           hparams.embed_dim,activation)
-                  #
-                  #
-                  # elif hparams.src_embed_type[0:3] == 'gtf':
-                  #     # gtf : Gate function
-                  #     encoder_emb_inp = embedding_helper.simple_3D_concat_gate_function(encoder_emb_inp,
-                  #                                                                       tf.nn.embedding_lookup(
-                  #                                                                           self.embedding_encoder,
-                  #                                                                           source),
-                  #                                                                       hparams.embed_dim)
-                  # elif hparams.src_embed_type[0:3] == 'wtf':
-                  #     # gtf : Gate function
-                  #     encoder_emb_inp = embedding_helper.simple_3D_concat_weighted_function(encoder_emb_inp,
-                  #                                                                           tf.nn.embedding_lookup(
-                  #                                                                               self.embedding_encoder,
-                  #                                                                               source),
-                  #                                                                           hparams.embed_dim)
                   else:
                       raise Exception('Unknown hparams.src_embed_type : %s' % hparams.src_embed_type)
 
@@ -738,6 +694,14 @@ class Model(BaseModel):
                   if hparams.src_embed_type[0:3] == 'rnn':
                     # Simply add two embeddings
                     encoder_emb_inp += tf.nn.embedding_lookup(self.embedding_encoder, source)
+                  elif hparams.src_embed_type[0:3] == 'rl2':
+                      word_level = tf.nn.embedding_lookup(self.embedding_encoder, source)
+                      self.loss_items.append(tf.nn.l2_loss(word_level - encoder_emb_inp))
+                      encoder_emb_inp += word_level
+                  elif hparams.src_embed_type[0:3] == 'rl1':
+                      word_level = tf.nn.embedding_lookup(self.embedding_encoder, source)
+                      self.loss_items.append(tf.reduce_mean(tf.abs(word_level - encoder_emb_inp) / 2))
+                      encoder_emb_inp += word_level
                   elif hparams.src_embed_type[0:3] == 'lfw':
                     encoder_emb_inp = encoder_emb_inp * iterator.unknown_src + tf.nn.embedding_lookup(
                         self.embedding_encoder, source) * (1.0 - iterator.unknown_src)
