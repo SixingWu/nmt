@@ -266,7 +266,7 @@ if __name__ == "__main__":
   #ref_file = r"D:\nmt\ref\char2_dev.response"
   trans_file = sys.argv[3]  # r"D:\nmt\beam_search\word_4W_10_dev_f.inf.response"
   out_path = sys.argv[4]
-  metrics = sys.argv[5].split(' ')
+  metrics = sys.argv[5].split(',')
   subword = None
 
   with open(out_path,'w+',encoding='utf-8') as fout:
