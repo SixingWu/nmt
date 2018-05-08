@@ -387,7 +387,7 @@ def train(hparams, scope=None, target_session=""):
   # utils.print_out('# Parameters: %d' % trainable_parameters)
 
 
-  while (hparams.dev_stop_flag is False) and global_step < num_train_steps:
+  while (hparams.dev_stop_flag is False and global_step > 16 * 10000) and global_step < num_train_steps:
 
     ### Run a step ###
     start_time = time.time()
