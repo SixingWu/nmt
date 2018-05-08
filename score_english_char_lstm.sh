@@ -1,0 +1,2 @@
+python3 -m nrm.utils.evaluation_utils english_char_lstm /home/mebiuw/nmt/data/encharspace/test.response infer_test/english_char_lstm.test.txt infer_test/scores/english_char_lstm.test.txt rouge@space,bleu-1@space,bleu-2@space,bleu-3@space,bleu-4@space,distinct-1@space,distinct-2@space
+    

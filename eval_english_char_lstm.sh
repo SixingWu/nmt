@@ -1,0 +1,2 @@
+python3 -m nrm.nrm  --infer_beam_width=10 --out_dir=models/english_char_lstm --vocab_prefix=/home/mebiuw/nmt/data/encharspace/vocab.40000.separate --inference_input_file=/home/mebiuw/nmt/data/encharspace/test.message --inference_output_file=infer_test/english_char_lstm.test.txt >> infer_test/log/english_char_lstm.test.txt
+    

@@ -1,0 +1,2 @@
+python3 -m nrm.utils.evaluation_utils bpe_lstm /ldev/tensorflow/nmt2/nmt/data/bpelevel/test.response infer_test/bpe_lstm.test.txt infer_test/scores/bpe_lstm.test.txt rouge@bpe,bleu-1@bpe,bleu-2@bpe,bleu-3@bpe,bleu-4@bpe,distinct-1@bpe,distinct-2@bpe
+    

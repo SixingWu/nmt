@@ -1,1 +1,6 @@
 python3 -m nrm.nrm      --embed_dim=512      --encoder_type=bi      --tgt=response      --src=message      --num_units=512      --steps_per_stats=100      --dev_prefix=/home/mebiuw/nmt/data/enbpelevel/dev      --batch_size=256      --unit_type=lstm      --share_vocab=False      --vocab_prefix=/home/mebiuw/nmt/data/enbpelevel/vocab.40000.separate      --out_dir=models/enbpe_lstm      --metrics=rouge@bpe,bleu-1@bpe,bleu-2@bpe,bleu-3@bpe,bleu-4@bpe,distinct-1@bpe,distinct-2@bpe      --test_prefix=/home/mebiuw/nmt/data/enbpelevel/test      --tgt_max_len=35      --num_train_steps=1000000      --attention=luong      --infer_batch_size=10      --num_layers=2      --src_max_len=35      --train_prefix=/home/mebiuw/nmt/data/enbpelevel/train     >> logs/enbpe_lstm.txt 
+
+python3 -m nrm.nrm  --infer_beam_width=10 --out_dir=models/enbpe_lstm --vocab_prefix=/home/mebiuw/nmt/data/enbpelevel/vocab.40000.separate --inference_input_file=/home/mebiuw/nmt/data/enbpelevel/test.message --inference_output_file=infer_test/enbpe_lstm.test.txt >> infer_test/log/enbpe_lstm.test.txt
+    
+python3 -m nrm.utils.evaluation_utils enbpe_lstm /home/mebiuw/nmt/data/enbpelevel/test.response infer_test/enbpe_lstm.test.txt infer_test/scores/enbpe_lstm.test.txt rouge@bpe,bleu-1@bpe,bleu-2@bpe,bleu-3@bpe,bleu-4@bpe,distinct-1@bpe,distinct-2@bpe
+    

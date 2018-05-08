@@ -1,0 +1,2 @@
+python3 -m nrm.utils.evaluation_utils enword_lstm /home/mebiuw/nmt/data/enwordlevel/test.response infer_test/enword_lstm.test.txt infer_test/scores/enword_lstm.test.txt rouge,bleu-1,bleu-2,bleu-3,bleu-4,distinct-1,distinct-2
+    
