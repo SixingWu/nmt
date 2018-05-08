@@ -529,6 +529,7 @@ class BaseModel(object):
 
     for item in self.loss_items:
         loss += tf.reduce_sum(item)
+    print(item)
     return loss
 
   def _get_infer_summary(self, hparams):
