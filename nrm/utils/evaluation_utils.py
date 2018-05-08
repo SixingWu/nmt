@@ -261,6 +261,7 @@ def _moses_bleu(multi_bleu_script, tgt_test, trans_file, subword_option=None):
   return bleu_score
 
 if __name__ == "__main__":
+  sys.path.append(os.path.dirname(sys.path[0]))
   model_id = sys.argv[1]
   ref_file = sys.argv[2] # r"D:\nmt\ref\dev.20000.response"
   #ref_file = r"D:\nmt\ref\char2_dev.response"
