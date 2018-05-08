@@ -1,3 +1,6 @@
-export CUDA_VISIBLE_DEVICES=0 
-
 python3 -m nrm.nrm      --embed_dim=512      --encoder_type=bi      --tgt=response      --src=message      --num_units=512      --steps_per_stats=100      --dev_prefix=/home/mebiuw/nmt/data/enwordlevel/dev      --batch_size=256      --unit_type=lstm      --share_vocab=False      --vocab_prefix=/home/mebiuw/nmt/data/enwordlevel/vocab.40000.separate      --out_dir=models/enword_lstm      --metrics=rouge,bleu-1,bleu-2,bleu-3,bleu-4,distinct-1,distinct-2      --test_prefix=/home/mebiuw/nmt/data/enwordlevel/test      --tgt_max_len=30      --num_train_steps=1000000      --attention=luong      --infer_batch_size=10      --num_layers=2      --src_max_len=30      --train_prefix=/home/mebiuw/nmt/data/enwordlevel/train     >> logs/enword_lstm.txt 
+
+python3 -m nrm.nrm  --infer_beam_width=10 --out_dir=models/enword_lstm --vocab_prefix=/home/mebiuw/nmt/data/enwordlevel/vocab.40000.separate --inference_input_file=/home/mebiuw/nmt/data/enwordlevel/test.message --inference_output_file=infer_test/enword_lstm.test.txt >> infer_test/log/enword_lstm.test.txt
+    
+python3 -m nrm.utils.evaluation_utils enword_lstm /home/mebiuw/nmt/data/enwordlevel/test.response infer_test/enword_lstm.test.txt infer_test/scores/enword_lstm.test.txt rouge,bleu-1,bleu-2,bleu-3,bleu-4,distinct-1,distinct-2
+    

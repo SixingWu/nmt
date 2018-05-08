@@ -1,1 +1,6 @@
 python3 -m nrm.nrm      --embed_dim=512      --encoder_type=bi      --tgt=response      --src=message      --num_units=512      --steps_per_stats=100      --dev_prefix=/ldev/tensorflow/nmt2/nmt/data/bpelevel/dev      --batch_size=256      --unit_type=lstm      --share_vocab=False      --vocab_prefix=/ldev/tensorflow/nmt2/nmt/data/bpelevel/vocab.40000.separate      --out_dir=models/bpe_lstm      --metrics=rouge@bpe,bleu-1@bpe,bleu-2@bpe,bleu-3@bpe,bleu-4@bpe,distinct-1@bpe,distinct-2@bpe      --test_prefix=/ldev/tensorflow/nmt2/nmt/data/bpelevel/test      --tgt_max_len=30      --num_train_steps=1000000      --attention=luong      --infer_batch_size=10      --num_layers=2      --src_max_len=30      --train_prefix=/ldev/tensorflow/nmt2/nmt/data/bpelevel/train     >> logs/bpe_lstm.txt 
+
+python3 -m nrm.nrm  --infer_beam_width=10 --out_dir=models/bpe_lstm --vocab_prefix=/ldev/tensorflow/nmt2/nmt/data/bpelevel/vocab.40000.separate --inference_input_file=/ldev/tensorflow/nmt2/nmt/data/bpelevel/test.message --inference_output_file=infer_test/bpe_lstm.test.txt >> infer_test/log/bpe_lstm.test.txt
+    
+python3 -m nrm.utils.evaluation_utils bpe_lstm /ldev/tensorflow/nmt2/nmt/data/bpelevel/test.response infer_test/bpe_lstm.test.txt infer_test/scores/bpe_lstm.test.txt rouge@bpe,bleu-1@bpe,bleu-2@bpe,bleu-3@bpe,bleu-4@bpe,distinct-1@bpe,distinct-2@bpe
+    

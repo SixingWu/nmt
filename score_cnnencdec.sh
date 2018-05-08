@@ -1,0 +1,2 @@
+python3 -m nrm.utils.evaluation_utils cnnencdec /ldev/tensorflow/nmt2/nmt/data/charspace/test.response infer_test/cnnencdec.test.txt infer_test/scores/cnnencdec.test.txt rouge@space,bleu-1@space,bleu-2@space,bleu-3@space,bleu-4@space,distinct-1@space,distinct-2@space
+    

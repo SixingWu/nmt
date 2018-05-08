@@ -1,0 +1,2 @@
+python3 -m nrm.utils.evaluation_utils encnn /home/mebiuw/nmt/data/enbpelevel/test.response infer_test/encnn.test.txt infer_test/scores/encnn.test.txt rouge@space,bleu-1@space,bleu-2@space,bleu-3@space,bleu-4@space,distinct-1@space,distinct-2@space
+    
