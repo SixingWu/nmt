@@ -261,21 +261,27 @@ def _moses_bleu(multi_bleu_script, tgt_test, trans_file, subword_option=None):
   return bleu_score
 
 if __name__ == "__main__":
-  ref_file = r"D:\nmt\ref\dev.20000.response"
+  model_id = sys.argv[1]
+  ref_file = sys.argv[2] # r"D:\nmt\ref\dev.20000.response"
   #ref_file = r"D:\nmt\ref\char2_dev.response"
-  trans_file = r"D:\nmt\beam_search\word_4W_10_dev_f.inf.response"
-  
+  trans_file = sys.argv[3]  # r"D:\nmt\beam_search\word_4W_10_dev_f.inf.response"
+  out_path = sys.argv[4]
+  metrics = sys.argv[5].split(' ')
   subword = None
 
-  print('res file: %s' % ref_file)
-  print('trans_file:%s' % trans_file)
-  scores = []
-  for metric in ['rouge','bleu-1','bleu-2','bleu-3','bleu-4','distinct-1']:
-    score = evaluate(ref_file,trans_file,metric+'@hybrid',subword_option=subword)
-    scores.append(str(score))
-  print('\t'.join(scores))
-  scores = []
-  for metric in ['rouge', 'bleu-1', 'bleu-2', 'bleu-3', 'bleu-4']:
-    score = evaluate(ref_file, trans_file, metric + '@char', subword_option=subword)
-    scores.append(str(score))
-  print('\t'.join(scores))
+  with open(out_path,'w+',encoding='utf-8') as fout:
+    for metric in metrics:
+        score = evaluate(ref_file, trans_file, metric, subword_option=subword)
+        fout.write(('%s\t%f\n') % (metric, score))
+  # print('res file: %s' % ref_file)
+  # print('trans_file:%s' % trans_file)
+  # scores = []
+  # for metric in metrics:
+  #   score = evaluate(ref_file,trans_file,metric+'@hybrid',subword_option=subword)
+  #   scores.append(str(score))
+  # print('\t'.join(scores))
+  # scores = []
+  # for metric in ['rouge', 'bleu-1', 'bleu-2', 'bleu-3', 'bleu-4']:
+  #   score = evaluate(ref_file, trans_file, metric + '@char', subword_option=subword)
+  #   scores.append(str(score))
+  # print('\t'.join(scores))
