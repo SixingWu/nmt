@@ -1,0 +1,2 @@
+python3 -m nrm.nrm  --infer_beam_width=10 --out_dir=models/cn_rnn_hl --vocab_prefix=/ldev/tensorflow/nmt2/nmt/data/hllevel/vocab.40000 --inference_input_file=/ldev/tensorflow/nmt2/nmt/data/hllevel/test.40000.message --inference_output_file=infer_test/cn_rnn_hl.test.txt >> infer_test/log/cn_rnn_hl.test.txt
+    

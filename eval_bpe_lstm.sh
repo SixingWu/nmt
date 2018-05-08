@@ -1,0 +1,2 @@
+python3 -m nrm.nrm  --infer_beam_width=10 --out_dir=models/bpe_lstm --vocab_prefix=/ldev/tensorflow/nmt2/nmt/data/bpelevel/vocab.40000.separate --inference_input_file=/ldev/tensorflow/nmt2/nmt/data/bpelevel/test.message --inference_output_file=infer_test/bpe_lstm.test.txt >> infer_test/log/bpe_lstm.test.txt
+    
