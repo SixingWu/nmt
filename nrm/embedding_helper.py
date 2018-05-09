@@ -208,17 +208,19 @@ def build_cnn_encoder(embedding_emb_inp, cnn_encoder_param):
 
 
 
-def build_attention_sum_layer(num_units, memory, max_time):
+def build_attention_sum_layer(num_units, embeddings, max_time):
     """
 
-    :param num_units: [batch_size, max_time, ...].
-    :param memory:
-    :return: [batch_size ...].
+    :param embeddings: [batch_size, max_time, ...].
+    :param max_time:
+    :return:
     """
-    alignments = tf.contrib.seq2seq.LuongAttention(num_units=num_units, memory=memory)
-    probs = tf.reshape(alignments,[-1, max_time])
-    weighted_sum = tf.reshape(tf.reduce_sum(tf.multiply(memory,probs), axis=-1), [-1, num_units])
-    return weighted_sum
+    logits = tf.reshape(tf.layers.dense(embeddings, 1, activation=tf.nn.relu),[-1, max_time])
+    probs = tf.nn.softmax(logits=logits, dim=-1)
+    weighted = tf.multiply(embeddings, probs)
+    sumed = tf.reduce(tf.reduce_sum(weighted, axis=1),[-1, num_units])
+    return sumed
+
 
 
 
