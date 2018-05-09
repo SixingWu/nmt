@@ -218,7 +218,7 @@ def build_attention_sum_layer(num_units, embeddings, max_time):
     logits = tf.reshape(tf.layers.dense(embeddings, 1, activation=tf.nn.relu),[-1, max_time])
     probs = tf.reshape(tf.nn.softmax(logits=logits, dim=-1),[-1, max_time, 1])
     weighted = tf.multiply(embeddings, probs)
-    sumed = tf.reduce(tf.reduce_sum(weighted, axis=1),[-1, num_units])
+    sumed = tf.reshape(tf.reduce_sum(weighted, axis=1),[-1, num_units])
     return sumed
 
 
