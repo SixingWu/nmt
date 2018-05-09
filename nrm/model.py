@@ -701,7 +701,7 @@ class Model(BaseModel):
                           word_encoder_outputs, _ = embedding_helper.build_rnn_encoder(word_encoder)
                           #  [batch_size * seq_len, max_time, cell.output_size].
                           subunits_embedding = tf.transpose(word_encoder_outputs,[1,0,2])
-                          encoder_emb_inp = embedding_helper.build_attention_sum_layer(hparams.seg_embed_sim, subunits_embedding, hparams.seg_len)
+                          encoder_emb_inp = embedding_helper.build_attention_sum_layer(hparams.seg_embed_dim, subunits_embedding, hparams.seg_len)
                           encoder_emb_inp = embedding_helper.projection(encoder_emb_inp, hparams.seg_embed_dim,
                                                                         hparams.embed_dim)
                           encoder_emb_inp = tf.reshape(encoder_emb_inp, [_batch_size, _seq_len, hparams.embed_dim])
