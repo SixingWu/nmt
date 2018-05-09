@@ -208,6 +208,22 @@ def build_cnn_encoder(embedding_emb_inp, cnn_encoder_param):
 
 
 
+def build_attention_sum_layer(num_units, memory, max_time):
+    """
+
+    :param num_units: [batch_size, max_time, ...].
+    :param memory:
+    :return: [batch_size ...].
+    """
+    alignments = tf.contrib.seq2seq.LuongAttention(num_units=num_units, memory=memory)
+    probs = tf.reshape(alignments,[-1, max_time])
+    weighted_sum = tf.reshape(tf.reduce_sum(tf.multiply(memory,probs), axis=-1), [-1, num_units])
+    return weighted_sum
+
+
+
+
+
 def build_rnn_encoder(encoder_param):
     """
     RNN Encoder
@@ -221,7 +237,9 @@ def build_rnn_encoder(encoder_param):
                         (num_layers, num_residual_layers))
         cell = _build_encoder_cell(
             encoder_param, num_layers, num_residual_layers)
-
+        '''
+        encoder_outputs: [max_time, batch_size, cell.output_size].
+        '''
         encoder_outputs, encoder_state = tf.nn.dynamic_rnn(
             cell,
             encoder_param.enocder_seq_input,
