@@ -157,14 +157,14 @@ def _bleu(ref_file, trans_file,max_order=4, subword_option=None):
       reference_list.append(reference.split(" "))
     per_segment_references.append(reference_list)
 
-  #print(per_segment_references[0:15])
+  print(per_segment_references[0:15])
 
   translations = []
   with codecs.getreader("utf-8")(tf.gfile.GFile(trans_file, "rb")) as fh:
     for line in fh:
       line = _clean(line, subword_option=subword_option)
       translations.append(line.split(" "))
-  #print(translations[0:15])
+  print(translations[0:15])
   # bleu_score, precisions, bp, ratio, translation_length, reference_length
   bleu_score, _, _, _, _, _ = bleu.compute_bleu(
       per_segment_references, translations, max_order, smooth)
