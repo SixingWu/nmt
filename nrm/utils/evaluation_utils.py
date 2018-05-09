@@ -63,6 +63,9 @@ def evaluate(ref_file, trans_file, metric, subword_option=None):
   elif metric.lower()[0:len('distinct')] == 'distinct':
     max_order = int(metric.lower()[len('distinct')+1:])
     evaluation_score = _distinct(trans_file,max_order,subword_option=subword_option)
+  elif metric.lower()[0:len('distinct_c')] == 'distinct_c':
+    max_order = int(metric.lower()[len('distinct_c')+1:])
+    evaluation_score = _distinct_c(trans_file,max_order,subword_option=subword_option)
   else:
     raise ValueError("Unknown metric %s" % metric)
 
@@ -136,6 +139,27 @@ def _distinct(trans_file,max_order=1, subword_option=None):
   ratio = len(unique_tokens) / num_tokens
   return 100 * ratio
 
+
+def _distinct_c(trans_file,max_order=1, subword_option=None):
+  """Compute Distinct Score"""
+
+  translations = []
+  with codecs.getreader("utf-8")(tf.gfile.GFile(trans_file, "rb")) as fh:
+    for line in fh:
+      line = _clean(line, subword_option=subword_option)
+      translations.append(line.split(" "))
+
+  num_tokens = 0
+  unique_tokens = set()
+  for items in translations:
+
+      #print(items)
+      for i in range(0, len(items) - max_order + 1):
+        tmp = ' '.join(items[i:i+max_order])
+        unique_tokens.add(tmp)
+        num_tokens += 1
+  ratio = len(unique_tokens)
+  return ratio
 
 # Follow //transconsole/localization/machine_translation/metrics/bleu_calc.py
 def _bleu(ref_file, trans_file,max_order=4, subword_option=None):
