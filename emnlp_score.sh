@@ -5,3 +5,4 @@ bash score_bpe_lstm.sh
 bash score_cnnencdec.sh
 bash score_cn_hl.sh
 bash score_cn_hl1.sh
+bash score_cn_rnn_hl1.sh
