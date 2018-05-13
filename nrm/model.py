@@ -697,16 +697,37 @@ class Model(BaseModel):
                       '''
                       encoder_outputs: [max_time, batch_size, cell.output_size].
                       '''
-                      with tf.variable_scope("Attention"):
-                          word_encoder_outputs, _ = embedding_helper.build_rnn_encoder(word_encoder)
-                          #  [batch_size * seq_len, max_time, cell.output_size].
-                          subunits_embedding = tf.transpose(word_encoder_outputs,[1,0,2])
-                          encoder_emb_inp = embedding_helper.build_attention_sum_layer(hparams.seg_embed_dim, subunits_embedding, hparams.seg_len)
-                          encoder_emb_inp = embedding_helper.projection(encoder_emb_inp, hparams.seg_embed_dim,
-                                                                        hparams.embed_dim)
-                          encoder_emb_inp = tf.reshape(encoder_emb_inp, [_batch_size, _seq_len, hparams.embed_dim])
-                          # [max_time, batch_size, embedding]
-                          encoder_emb_inp = tf.transpose(encoder_emb_inp, perm=[1, 0, 2])
+                      if 'attentionv2' in hparams.src_embed_type:
+                          with tf.variable_scope("AttentionV2"):
+                              print('AttentionV2')
+                              char_emb_inp = tf.transpose(encoder_emb_inp, perm=[1, 0, 2])
+                              char_emb_inp = tf.reshape(char_emb_inp, [_batch_size * _seq_len, hparams.seg_len,
+                                                                             hparams.seg_embed_dim])
+                              word_encoder_outputs, _ = embedding_helper.build_rnn_encoder(word_encoder)
+                              #  [batch_size * seq_len, max_time, cell.output_size].
+                              subunits_embedding = tf.transpose(word_encoder_outputs, [1, 0, 2])
+                              memory = tf.concat([subunits_embedding, char_emb_inp], axis='-1', name='memory')
+                              encoder_emb_inp = embedding_helper.build_attention2_sum_layer(hparams.seg_embed_dim,
+                                                                                            memory,
+                                                                                            subunits_embedding,
+                                                                                            hparams.seg_len)
+                              encoder_emb_inp = embedding_helper.projection(encoder_emb_inp, hparams.seg_embed_dim,
+                                                                            hparams.embed_dim)
+                              encoder_emb_inp = tf.reshape(encoder_emb_inp, [_batch_size, _seq_len, hparams.embed_dim])
+                              # [max_time, batch_size, embedding]
+                              encoder_emb_inp = tf.transpose(encoder_emb_inp, perm=[1, 0, 2])
+                      else:
+                          with tf.variable_scope("Attention"):
+                              word_encoder_outputs, _ = embedding_helper.build_rnn_encoder(word_encoder)
+                              #  [batch_size * seq_len, max_time, cell.output_size].
+                              subunits_embedding = tf.transpose(word_encoder_outputs,[1,0,2])
+                              encoder_emb_inp = embedding_helper.build_attention_sum_layer(hparams.seg_embed_dim, subunits_embedding, hparams.seg_len)
+                              encoder_emb_inp = embedding_helper.projection(encoder_emb_inp, hparams.seg_embed_dim,
+                                                                            hparams.embed_dim)
+                              encoder_emb_inp = tf.reshape(encoder_emb_inp, [_batch_size, _seq_len, hparams.embed_dim])
+                              # [max_time, batch_size, embedding]
+                              encoder_emb_inp = tf.transpose(encoder_emb_inp, perm=[1, 0, 2])
+
 
 
 

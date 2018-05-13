@@ -221,6 +221,21 @@ def build_attention_sum_layer(num_units, embeddings, max_time):
     sumed = tf.reshape(tf.reduce_sum(weighted, axis=1),[-1, num_units])
     return sumed
 
+def build_attention2_sum_layer(num_units, memory, embeddings, max_time):
+    """
+
+    :param embeddings: [batch_size, max_time, ...].
+    :param max_time:
+    :return:
+    """
+    logits = tf.reshape(tf.layers.dense(memory, 1, activation=tf.nn.relu),[-1, max_time])
+    probs = tf.reshape(tf.nn.softmax(logits=logits, dim=-1),[-1, max_time, 1])
+    weighted = tf.multiply(embeddings, probs)
+    sumed = tf.reshape(tf.reduce_sum(weighted, axis=1),[-1, num_units])
+    return sumed
+
+
+
 
 
 
