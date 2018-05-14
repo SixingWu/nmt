@@ -1,2 +1,2 @@
-python3 -m nrm.nrm  --infer_beam_width=10 --out_dir=models/encnn --vocab_prefix=/home/mebiuw/nmt/data/enbpelevel/vocab.40000.separate --inference_input_file=/home/mebiuw/nmt/data/enbpelevel/test.message --inference_output_file=infer_test/encnn.test.txt >> infer_test/log/encnn.test.txt
+python3 -m nrm.nrm  --infer_beam_width=10 --out_dir=models/encnn --vocab_prefix=/home/mebiuw/nmt/data/charspace/vocab.40000.separate --inference_input_file=/home/mebiuw/nmt/data/charspace/test.message --inference_output_file=infer_test/encnn.test.txt >> infer_test/log/encnn.test.txt
     

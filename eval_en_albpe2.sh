@@ -1,0 +1,2 @@
+python3 -m nrm.nrm  --infer_beam_width=10 --out_dir=models/en_albpe2 --vocab_prefix=/ldev/tensorflow/nmt2/nmt/data/enallevel/vocab.40000 --inference_input_file=/ldev/tensorflow/nmt2/nmt/data/enallevel/test.40000.message --inference_output_file=infer_test/en_albpe2.test.txt >> infer_test/log/en_albpe2.test.txt
+    

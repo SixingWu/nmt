@@ -1,0 +1,2 @@
+python3 -m nrm.utils.evaluation_utils cn_albpe2 /ldev/tensorflow/nmt2/nmt/data/allevel/test.40000.response infer_test/cn_albpe2.test.txt infer_test/scores/cn_albpe2.test.txt rouge@hybrid,bleu-1@hybrid,bleu-2@hybrid,bleu-3@hybrid,bleu-4@hybrid,distinct-1@hybrid,distinct-2@hybrid
+    
