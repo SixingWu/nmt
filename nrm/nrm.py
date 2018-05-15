@@ -344,7 +344,7 @@ def create_hparams(flags):
   return tf.contrib.training.HParams(
 
       # AL_EncDec
-      al_highway = flags.al_highway_layers,
+      al_highway_layers = flags.al_highway_layers,
       # seg embedding
       seg_len=flags.seg_len,
       seg_separator='\t',
