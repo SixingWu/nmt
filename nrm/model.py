@@ -711,6 +711,12 @@ class Model(BaseModel):
                                                                                             memory,
                                                                                             subunits_embedding,
                                                                                             hparams.seg_len)
+                              if 'highway' in hparams.src_embed_type:
+                                  print('highway_network')
+                                  for i in range(hparams.al_highway_layers):
+                                      encoder_emb_inp = embedding_helper.highway(encoder_emb_inp, hparams.seg_embed_dim,
+                                                                                 tf.nn.relu, name='highway_%d' % i)
+
                               encoder_emb_inp = embedding_helper.projection(encoder_emb_inp, hparams.seg_embed_dim,
                                                                             hparams.embed_dim)
                               encoder_emb_inp = tf.reshape(encoder_emb_inp, [_batch_size, _seq_len, hparams.embed_dim])
@@ -728,10 +734,7 @@ class Model(BaseModel):
                               # [max_time, batch_size, embedding]
                               encoder_emb_inp = tf.transpose(encoder_emb_inp, perm=[1, 0, 2])
 
-                  if 'highway' in hparams.src_embed_type:
-                      print('highway_network')
-                      for i in range(hparams.al_highway_layers):
-                          encoder_emb_inp = embedding_helper.highway(encoder_emb_inp, hparams.embed_dim, tf.nn.relu, name='highway_%d' % i)
+
 
 
 
