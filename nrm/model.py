@@ -728,6 +728,10 @@ class Model(BaseModel):
                               # [max_time, batch_size, embedding]
                               encoder_emb_inp = tf.transpose(encoder_emb_inp, perm=[1, 0, 2])
 
+                  if 'highway' in hparams.src_embed_type:
+                      print('highway_network')
+                      for i in range(hparams.al_highway_layers):
+                          encoder_emb_inp = embedding_helper.highway(encoder_emb_inp, hparams.embed_dim, tf.nn.relu, name='highway_%d' % i)
 
 
 

@@ -70,8 +70,9 @@ def add_arguments(parser):
 
   # Encoder RNN
   parser.add_argument("--num_units", type=int, default=128, help="Network size.")
-  parser.add_argument("--num_layers", type=int, default=2,
-                      help="Network depth.")
+  parser.add_argument("--num_layers", type=int, default=2,help="Network al_highway_layers.")
+  parser.add_argument("--al_highway_layers", type=int, default=2,
+                      help="al_highway_layers")
   parser.add_argument("--encoder_type", type=str, default="bi", help="""\
         uni | bi | gnmt. For bi, we build num_layers/2 bi-directional layers.For
         gnmt, we build 1 bi-directional layer, and (num_layers - 1) uni-
@@ -341,6 +342,9 @@ def create_hparams(flags):
   #TODO : Add default hparams pattern
 
   return tf.contrib.training.HParams(
+
+      # AL_EncDec
+      al_highway = flags.al_highway_layers,
       # seg embedding
       seg_len=flags.seg_len,
       seg_separator='\t',
