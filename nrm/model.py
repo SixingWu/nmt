@@ -621,6 +621,7 @@ class Model(BaseModel):
                       width_strides=1,
                       high_way_type=hparams.charcnn_high_way_type,
                       high_way_layers=hparams.charcnn_high_way_layer,
+                      max_k=hparams.charcnn_max_k,
                       name='cnn_encoder',
                       relu_type=hparams.charcnn_relu,
 

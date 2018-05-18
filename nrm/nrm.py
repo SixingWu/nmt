@@ -88,6 +88,7 @@ def add_arguments(parser):
                       help="Number of partitions for embedding vars.")
 
   # CNN for full word sequence
+    
   parser.add_argument("--width_strides", type=int, default=3,
                       help="CNN width_strides")
   parser.add_argument("--cnn_min_window_size", type=int, default=1, help="cnn min windows size.")
@@ -113,6 +114,7 @@ def add_arguments(parser):
   parser.add_argument("--charcnn_max_window_size", type=int, default=5, help="CharCNN cnn max windows size.")
   parser.add_argument("--charcnn_high_way_layer", type=int, default=2, help="CharCNN highway network layers")
   parser.add_argument("--charcnn_high_way_type", type=str, default='uniform', help="uniform or per_filter")
+  parser.add_argument("--charcnn_max_k", type=int, default=1, help="k-max pooling over time")
 
   """
     Network Setting
@@ -371,6 +373,7 @@ def create_hparams(flags):
       # cnn encoder
       # TODO 修复命名错误
       flexible_charcnn_windows=flags.flexible_charcnn_windows,
+      charcnn_max_k=flags.charcnn_max_k,
       charcnn_relu=flags.charcnn_relu,
       charcnn_min_window_size=flags.charcnn_min_window_size,
       charcnn_max_window_size=flags.charcnn_max_window_size,

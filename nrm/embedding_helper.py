@@ -13,7 +13,7 @@ class EncoderParam(
 class CNNEncoderParam(
     collections.namedtuple("CNNEncoderParam", ("max_time", "batch_size", "embed_dim","relu_type",
                                             "min_windows","max_windows","flexible_configs","filters_per_windows","width_strides",
-                                            "high_way_type","high_way_layers","name"))):
+                                            "high_way_type","high_way_layers","name","max_k"))):
   pass
 
 
@@ -115,6 +115,7 @@ def build_cnn_encoder(embedding_emb_inp, cnn_encoder_param):
 
     high_way_type = cnn_encoder_param.high_way_type
     high_way_layers = cnn_encoder_param.high_way_layers
+    max_k = cnn_encoder_param.max_k
 
 
 
@@ -133,14 +134,17 @@ def build_cnn_encoder(embedding_emb_inp, cnn_encoder_param):
     if flexible_configs == 'none':
         filter_nums = (max_windows - min_windows + 1) * filters_per_windows
         for width in range(min_windows, max_windows + 1):
+            # filter: [filter_height, filter_width, in_channels, out_channels]
             filter = tf.get_variable("filter_%d" % ( width ), shape=[embed_dim, width, 1, filters_per_windows])
             conv_heights.append(filters_per_windows)
             strides = [1, embed_dim, 1, 1]
             # [batch, height = 1, width = max_time, channels = filters_per_windows]
             if relu_type == 'relu':
+                
                 conv_out = tf.nn.relu(tf.nn.conv2d(conv_inputs, filter, strides, padding='SAME'))
             elif relu_type == 'leaky':
                 conv_out = tf.nn.leaky_relu(tf.nn.conv2d(conv_inputs, filter, strides, padding='SAME'))
+            print(conv_out)
             conv_outputs.append(conv_out)
     else:
         print('Flexible CharCNN Configurations :  %s' % flexible_configs)
@@ -162,16 +166,29 @@ def build_cnn_encoder(embedding_emb_inp, cnn_encoder_param):
                 conv_out = tf.nn.leaky_relu(tf.nn.conv2d(conv_inputs, filter, strides, padding='SAME'))
             conv_outputs.append(conv_out)
 
+            
+    def k_max_pooling_without_order(conv_out, k=2):
+        """
+        conv_out:[batch,1,seg_len,filter_num]
+        """
+        tmp = tf.transpose(conv_out, perm=[0,1,3,2])
+        tmp,_ = tf.nn.top_k(tmp, k, sorted=False)
+        res = tf.transpose(tmp, perm=[0,1,3,2])
+        return res
+        
+        
 
     # max_pooling over time
     pool_outputs = []
     width_strides = max_time
     strides = [1, 1, width_strides, 1]
+    filter_nums *= max_k
     segment_len = tf.cast(tf.ceil(max_time / width_strides), tf.int32)
     for conv_output,conv_height in zip(conv_outputs,conv_heights):
-        pool_out = tf.nn.max_pool(conv_output, [1, 1, width_strides, 1], strides, padding='SAME')
+        #pool_out = tf.nn.max_pool(conv_output, [1, 1, width_strides, 1], strides, padding='SAME')
         # [batch, height = 1, width = segment_len, channels = filters_per_windows]
-        pool_out = tf.reshape(pool_out, [batch_size, 1, conv_height])
+        pool_out = k_max_pooling_without_order(conv_output,max_k)
+        pool_out = tf.reshape(pool_out, [batch_size, max_k, conv_height])
         pool_outputs.append(pool_out)
 
     # Highway network
