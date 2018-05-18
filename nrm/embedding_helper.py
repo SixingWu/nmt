@@ -185,9 +185,13 @@ def build_cnn_encoder(embedding_emb_inp, cnn_encoder_param):
     filter_nums *= max_k
     segment_len = tf.cast(tf.ceil(max_time / width_strides), tf.int32)
     for conv_output,conv_height in zip(conv_outputs,conv_heights):
-        #pool_out = tf.nn.max_pool(conv_output, [1, 1, width_strides, 1], strides, padding='SAME')
+        #
         # [batch, height = 1, width = segment_len, channels = filters_per_windows]
-        pool_out = k_max_pooling_without_order(conv_output,max_k)
+        if max_k > 1:
+            print('K-Max pooling')
+            pool_out = k_max_pooling_without_order(conv_output,max_k)
+        else:
+            pool_out = tf.nn.max_pool(conv_output, [1, 1, width_strides, 1], strides, padding='SAME')
         pool_out = tf.reshape(pool_out, [batch_size, max_k, conv_height])
         pool_outputs.append(pool_out)
 
