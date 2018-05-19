@@ -630,7 +630,6 @@ class Model(BaseModel):
                       max_k=hparams.charcnn_max_k,
                       name='cnn_encoder',
                       relu_type=hparams.charcnn_relu,
-
                   )
                   cnn_output,filter_num = embedding_helper.build_cnn_encoder(encoder_emb_inp, word_encoder)
                   # [batch_size seq_len, embed]
