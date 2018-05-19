@@ -616,7 +616,7 @@ class Model(BaseModel):
               flattern_sequence_length = tf.reshape(seg_len_source, [-1])
               with tf.variable_scope('cnn_word_embedding_encoder'):
                   word_encoder = CNNEncoderParam(
-                      dropout= charcnn_dropout,
+                      dropout=charcnn_dropout,
                       max_time=hparams.seg_len,
                       batch_size= _batch_size * _seq_len,
                       embed_dim=hparams.seg_embed_dim,
