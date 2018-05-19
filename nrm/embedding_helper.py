@@ -11,7 +11,7 @@ class EncoderParam(
   pass
 
 class CNNEncoderParam(
-    collections.namedtuple("CNNEncoderParam", ("max_time", "batch_size", "embed_dim","relu_type","dropout"
+    collections.namedtuple("CNNEncoderParam", ("max_time", "batch_size", "embed_dim","relu_type","dropout",
                                             "min_windows","max_windows","flexible_configs","filters_per_windows","width_strides",
                                             "high_way_type","high_way_layers","name","max_k"))):
   pass
