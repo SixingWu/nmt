@@ -11,7 +11,7 @@ class EncoderParam(
   pass
 
 class CNNEncoderParam(
-    collections.namedtuple("CNNEncoderParam", ("max_time", "batch_size", "embed_dim","relu_type",
+    collections.namedtuple("CNNEncoderParam", ("max_time", "batch_size", "embed_dim","relu_type","dropout"
                                             "min_windows","max_windows","flexible_configs","filters_per_windows","width_strides",
                                             "high_way_type","high_way_layers","name","max_k"))):
   pass
@@ -110,17 +110,12 @@ def build_cnn_encoder(embedding_emb_inp, cnn_encoder_param):
     flexible_configs = cnn_encoder_param.flexible_configs
 
     relu_type = cnn_encoder_param.relu_type
-
+    dropout = cnn_encoder_param.dropout
 
 
     high_way_type = cnn_encoder_param.high_way_type
     high_way_layers = cnn_encoder_param.high_way_layers
     max_k = cnn_encoder_param.max_k
-
-
-
-
-
 
 
     #input
@@ -223,7 +218,9 @@ def build_cnn_encoder(embedding_emb_inp, cnn_encoder_param):
     else:
         highway_outputs = tf.concat(pool_outputs, axis=-1)
 
-
+    if dropout > 0:
+        print('Enable Dropout Rate')
+        highway_outputs = tf.nn.dropout(highway_outputs,1.0 - dropout)
 
     return highway_outputs,filter_nums
 

@@ -578,7 +578,12 @@ class Model(BaseModel):
     #TODO 增加对输入Embedding的处理方法 [1] raw_embedding, [2] cnn_per_word_embedding
     num_layers = hparams.num_layers
     num_residual_layers = hparams.num_residual_layers
-
+    if self.mode == tf.contrib.learn.ModeKeys.TRAIN:
+        dropout = self.mode
+        charcnn_dropout = hparams.charcnn_dropout
+    else:
+        dropout = 0.0
+        charcnn_dropout=0.0
     iterator = self.iterator
     source = iterator.source
     # 默认是true，也就是iterator过来的是batch，*，、*
@@ -611,6 +616,7 @@ class Model(BaseModel):
               flattern_sequence_length = tf.reshape(seg_len_source, [-1])
               with tf.variable_scope('cnn_word_embedding_encoder'):
                   word_encoder = CNNEncoderParam(
+                      dropout= charcnn_dropout,
                       max_time=hparams.seg_len,
                       batch_size= _batch_size * _seq_len,
                       embed_dim=hparams.seg_embed_dim,
@@ -652,6 +658,8 @@ class Model(BaseModel):
 
 
       elif 'rnn_segment' in hparams.src_embed_type:
+
+
           with tf.variable_scope('rnn_segment_embedding'):
               # [batch, seq_len, seg_len]
               seg_source = iterator.seg_source
@@ -676,7 +684,7 @@ class Model(BaseModel):
                                                    forget_bias=hparams.forget_bias,
                                                    dropout=hparams.dropout,
                                                    num_gpus=hparams.num_gpus,
-                                                   mode=self.mode,
+                                                   mode=dropout,
                                                    enocder_seq_input=encoder_emb_inp,
                                                    encoder_seq_len=flattern_sequence_length,
                                                    dtype=dtype,
