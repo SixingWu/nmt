@@ -1,2 +1,2 @@
-python3 -m nrm.nrm  --infer_beam_width=10 --out_dir=models/enword_lstm --vocab_prefix=/home/mebiuw/nmt/data/enwordlevel/vocab.40000.separate --inference_input_file=/home/mebiuw/nmt/data/enwordlevel/test.message --inference_output_file=infer_test/enword_lstm.test.txt >> infer_test/log/enword_lstm.test.txt
+python3 -m nrm.nrm  --infer_beam_width=10 --out_dir=models/enword_lstm --vocab_prefix=/ldev/tensorflow/nmt2/nmt/data/enwordlevel/vocab.40000.separate --inference_input_file=/ldev/tensorflow/nmt2/nmt/data/enwordlevel/test.message --inference_output_file=infer_test/enword_lstm.test.txt >> infer_test/log/enword_lstm.test.txt
     
