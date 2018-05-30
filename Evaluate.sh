@@ -1,6 +1,8 @@
 export CUDA_VISIBLE_DEVICES=1
 
-to_evaluate=("NRL1V2_charCNN_hybrid_4W" "NRL0_charCNN_hybrid_4W" "NRL1_charCNN_hybrid_4W" "NRL2_charCNN_hybrid_4W" "NRL3_charCNN_hybrid_4W")
+#to_evaluate=("NRL1V2_charCNN_hybrid_4W" "NRL0_charCNN_hybrid_4W" "NRL1_charCNN_hybrid_4W" "NRL2_charCNN_hybrid_4W" "NRL3_charCNN_hybrid_4W")
+to_evaluate=("NRL1V3_charCNN_hybrid_4W" "NRL1V4_charCNN_hybrid_4W")
+
 
 for item in ${to_evaluate[@]};
 do

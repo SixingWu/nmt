@@ -1,0 +1,6 @@
+python3 -m nrm.nrm      --out_dir=models/enword_light2      --infer_batch_size=10      --num_layers=2      --test_prefix=/ldev/tensorflow/nmt2/nmt/data/enword_light/test      --min_steps=0      --attention=luong      --dev_prefix=/ldev/tensorflow/nmt2/nmt/data/enword_light/dev      --batch_size=64      --encoder_type=bi      --tgt_max_len=20      --src=message      --metrics=rouge,bleu-3,distinct-2      --num_units=240      --unit_type=lstm      --vocab_prefix=/ldev/tensorflow/nmt2/nmt/data/enword_light/vocab.15000.separate      --src_max_len=20      --tgt=response      --train_prefix=/ldev/tensorflow/nmt2/nmt/data/enword_light/train      --share_vocab=False      --num_train_steps=1000000      --steps_per_stats=100      --embed_dim=320     >> logs/enword_light2.txt 
+
+python3 -m nrm.nrm  --infer_beam_width=10 --out_dir=models/enword_light2 --vocab_prefix=/ldev/tensorflow/nmt2/nmt/data/enword_light/vocab.15000.separate --inference_input_file=/ldev/tensorflow/nmt2/nmt/data/enword_light/test.message --inference_output_file=infer_test/enword_light2.test.txt >> infer_test/log/enword_light2.test.txt
+    
+python3 -m nrm.utils.evaluation_utils enword_light2 /ldev/tensorflow/nmt2/nmt/data/enword_light/test.response infer_test/enword_light2.test.txt infer_test/scores/enword_light2.test.txt rouge,bleu-3,distinct-2
+    

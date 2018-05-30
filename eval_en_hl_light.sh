@@ -1,0 +1,7 @@
+export CUDA_VISIBLE_DEVICES=0
+python3 -m nrm.nrm  --infer_beam_width=10 --out_dir=models/en_hl_light --vocab_prefix=/ldev/tensorflow/nmt2/nmt/data/enhl_light/vocab.15000 --inference_input_file=/ldev/tensorflow/nmt2/nmt/data/enhl_light/test.15000.message --inference_output_file=infer_test/en_hl_light.test.10.txt >> infer_test/log/en_hl_light.test.txt
+python3 -m nrm.nrm  --infer_beam_width=5 --out_dir=models/en_hl_light --vocab_prefix=/ldev/tensorflow/nmt2/nmt/data/enhl_light/vocab.15000 --inference_input_file=/ldev/tensorflow/nmt2/nmt/data/enhl_light/test.15000.message --inference_output_file=infer_test/en_hl_light.test.5.txt >> infer_test/log/en_hl_light.test.txt
+
+python3 -m nrm.nrm  --infer_beam_width=10 --out_dir=models/en_hl_light2 --vocab_prefix=/ldev/tensorflow/nmt2/nmt/data/enhl_light/vocab.15000 --inference_input_file=/ldev/tensorflow/nmt2/nmt/data/enhl_light/test.15000.message --inference_output_file=infer_test/en_hl_light2.test.10.txt >> infer_test/log/en_hl_light.test.txt
+python3 -m nrm.nrm  --infer_beam_width=5 --out_dir=models/en_hl_light2 --vocab_prefix=/ldev/tensorflow/nmt2/nmt/data/enhl_light/vocab.15000 --inference_input_file=/ldev/tensorflow/nmt2/nmt/data/enhl_light/test.15000.message --inference_output_file=infer_test/en_hl_light2.test.5.txt >> infer_test/log/en_hl_light.test.txt
+    

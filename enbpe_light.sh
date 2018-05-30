@@ -1,0 +1,6 @@
+python3 -m nrm.nrm      --out_dir=models/enbpe_light      --infer_batch_size=10      --num_layers=2      --test_prefix=/ldev/tensorflow/nmt2/nmt/data/enbpe_light/test      --min_steps=20000      --attention=luong      --dev_prefix=/ldev/tensorflow/nmt2/nmt/data/enbpe_light/dev      --batch_size=64      --encoder_type=bi      --tgt_max_len=25      --src=message      --metrics=rouge@bpe,bleu-3@bpe,distinct-2@bperouge@bpe      --num_units=240      --unit_type=lstm      --vocab_prefix=/ldev/tensorflow/nmt2/nmt/data/enbpe_light/vocab.15000.separate      --src_max_len=25      --tgt=response      --train_prefix=/ldev/tensorflow/nmt2/nmt/data/enbpe_light/train      --share_vocab=False      --num_train_steps=1000000      --steps_per_stats=100      --embed_dim=320     >> logs/enbpe_light.txt 
+
+python3 -m nrm.nrm  --infer_beam_width=10 --out_dir=models/enbpe_light --vocab_prefix=/ldev/tensorflow/nmt2/nmt/data/enbpe_light/vocab.15000.separate --inference_input_file=/ldev/tensorflow/nmt2/nmt/data/enbpe_light/test.message --inference_output_file=infer_test/enbpe_light.test.txt >> infer_test/log/enbpe_light.test.txt
+    
+python3 -m nrm.utils.evaluation_utils enbpe_light /ldev/tensorflow/nmt2/nmt/data/enbpe_light/test.response infer_test/enbpe_light.test.txt infer_test/scores/enbpe_light.test.txt rouge@bpe,bleu-3@bpe,distinct-2@bperouge@bpe
+    

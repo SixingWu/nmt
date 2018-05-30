@@ -177,6 +177,9 @@ def add_arguments(parser):
 
   parser.add_argument(
       "--num_train_steps", type=int, default=50000, help="Num steps to train.")
+  parser.add_argument(
+      "--min_steps", type=int, default=12*10000, help="Num steps to train.")
+  
   parser.add_argument("--colocate_gradients_with_ops", type="bool", nargs="?",
                       const=True,
                       default=True,
@@ -411,6 +414,7 @@ def create_hparams(flags):
       pass_hidden_state=flags.pass_hidden_state,
 
       # Train
+      min_steps=flags.min_steps,
       optimizer=flags.optimizer,
       num_train_steps=flags.num_train_steps,
       batch_size=flags.batch_size,
