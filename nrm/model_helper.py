@@ -128,7 +128,7 @@ def create_train_model(
         seg_tgt_dataset=seg_tgt_dataset,
         seg_len=seg_len,
         seg_separator=hparams.seg_separator,
-        seg_inter_separator = hparams.seg_inter_separator,
+        seg_inter_separator=hparams.seg_inter_separator,
         batch_size=hparams.batch_size,
         sos=hparams.sos,
         eos=hparams.eos,
