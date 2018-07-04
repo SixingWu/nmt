@@ -1,0 +1,2 @@
+python3 -m nrm.utils.evaluation_utils enword_light2 /ldev/tensorflow/nmt2/nmt/data/enword_light/test.response infer_test/enword_light2.test.txt infer_test/scores/enword_light2.test.txt rouge,bleu-3,distinct-2
+    

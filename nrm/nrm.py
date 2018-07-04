@@ -88,6 +88,7 @@ def add_arguments(parser):
                       help="Number of partitions for embedding vars.")
 
   # CNN for full word sequence
+    
   parser.add_argument("--width_strides", type=int, default=3,
                       help="CNN width_strides")
   parser.add_argument("--cnn_min_window_size", type=int, default=1, help="cnn min windows size.")
@@ -107,12 +108,14 @@ def add_arguments(parser):
   # CNN for characters of a word
 
   parser.add_argument("--flexible_charcnn_windows", type=str, default='none', help="window_width/height windows_width/height")
+  parser.add_argument("--charcnn_dropout", type=float, default=0.0, help="charcnn_dropout")
   parser.add_argument("--charcnn_filters_per_windows", type=int, default=200, help="charcnn_filters_per_windows")
   parser.add_argument("--charcnn_relu", type=str, default="relu", help="CharCNN activation type")
   parser.add_argument("--charcnn_min_window_size", type=int, default=2, help="CharCNN cnn min windows size.")
   parser.add_argument("--charcnn_max_window_size", type=int, default=5, help="CharCNN cnn max windows size.")
   parser.add_argument("--charcnn_high_way_layer", type=int, default=2, help="CharCNN highway network layers")
   parser.add_argument("--charcnn_high_way_type", type=str, default='uniform', help="uniform or per_filter")
+  parser.add_argument("--charcnn_max_k", type=int, default=1, help="k-max pooling over time")
 
   """
     Network Setting
@@ -174,6 +177,9 @@ def add_arguments(parser):
 
   parser.add_argument(
       "--num_train_steps", type=int, default=50000, help="Num steps to train.")
+  parser.add_argument(
+      "--min_steps", type=int, default=12*10000, help="Num steps to train.")
+  
   parser.add_argument("--colocate_gradients_with_ops", type="bool", nargs="?",
                       const=True,
                       default=True,
@@ -370,7 +376,9 @@ def create_hparams(flags):
 
       # cnn encoder
       # TODO 修复命名错误
+      charcnn_dropout = flags.charcnn_dropout,
       flexible_charcnn_windows=flags.flexible_charcnn_windows,
+      charcnn_max_k=flags.charcnn_max_k,
       charcnn_relu=flags.charcnn_relu,
       charcnn_min_window_size=flags.charcnn_min_window_size,
       charcnn_max_window_size=flags.charcnn_max_window_size,
@@ -406,6 +414,7 @@ def create_hparams(flags):
       pass_hidden_state=flags.pass_hidden_state,
 
       # Train
+      min_steps=flags.min_steps,
       optimizer=flags.optimizer,
       num_train_steps=flags.num_train_steps,
       batch_size=flags.batch_size,

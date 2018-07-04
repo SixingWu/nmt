@@ -1,0 +1,2 @@
+python3 -m nrm.nrm  --infer_beam_width=10 --out_dir=models/enbpe_light --vocab_prefix=/ldev/tensorflow/nmt2/nmt/data/enbpe_light/vocab.15000.separate --inference_input_file=/ldev/tensorflow/nmt2/nmt/data/enbpe_light/test.message --inference_output_file=infer_test/enbpe_light.test.txt >> infer_test/log/enbpe_light.test.txt
+    

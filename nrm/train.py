@@ -265,7 +265,7 @@ def check_stop_status(hparams, global_step):
     if dev_stop_flag is False:
         score_history = getattr(hparams, 'dev_score_history')
         if len(score_history) > 4:
-            if (score_history[-1] >= score_history[-2] or score_history[-1] > score_history[-3]) and (score_history[-2] >= score_history[-3]) :
+            if (score_history[-1] > score_history[-2] or score_history[-1] > score_history[-3]) and (score_history[-2] > score_history[-3]) :
                 dev_stop_flag = True
                 setattr(hparams,'dev_stop_flag', dev_stop_flag)
                 utils.print_out('The training will be automatically stopped, because the ppl on dev is increasing in two epochs')
@@ -386,8 +386,7 @@ def train(hparams, scope=None, target_session=""):
   #     trainable_parameters += count
   # utils.print_out('# Parameters: %d' % trainable_parameters)
 
-
-  while (hparams.dev_stop_flag is False or global_step < 12 * 10000) and global_step < num_train_steps:
+  while (hparams.dev_stop_flag is False or global_step < hparams.min_steps) and global_step < num_train_steps:
 
     ### Run a step ###
     start_time = time.time()
@@ -491,6 +490,7 @@ def train(hparams, scope=None, target_session=""):
       # add previous scores to hparam
       dev_ppl, test_ppl = run_internal_eval(
           eval_model, eval_sess, model_dir, hparams, summary_writer)
+      
       score_history = getattr(hparams, 'dev_score_history')
       score_history.append(dev_ppl)
       setattr(hparams, 'dev_score_history', score_history)
